@@ -10,6 +10,8 @@ export default function SubscriptionsPage() {
   const [subs, setSubs] = useState<any[]>([]);
   const [newSub, setNewSub] = useState({ name: '', url: '' });
   const [isLoading, setIsLoading] = useState(false);
+  const [editingSub, setEditingSub] = useState<any>(null);
+  const [viewingConvert, setViewingConvert] = useState<any>(null);
 
   const fetchSubs = async () => {
     try {
@@ -71,6 +73,44 @@ export default function SubscriptionsPage() {
       fetchSubs();
     } catch (e) {
       console.error('Toggle subscription error:', e);
+    }
+  };
+
+  const handleEditSub = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSub?.name || !editingSub?.url) return;
+
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingSub.id,
+          name: editingSub.name,
+          url: editingSub.url
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(t('updated'), 'success');
+        setEditingSub(null);
+        fetchSubs();
+      }
+    } catch (e) {
+      console.error('Edit subscription error:', e);
+    }
+  };
+
+  const parseConvertUrl = (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      const params: any[] = [];
+      urlObj.searchParams.forEach((value, key) => {
+        params.push({ key, value });
+      });
+      return params;
+    } catch (e) {
+      return [];
     }
   };
 
@@ -210,26 +250,42 @@ export default function SubscriptionsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2 ml-6">
-                  <button 
-                    onClick={() => applySub(sub.url)}
-                    disabled={isLoading}
-                    className="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors disabled:opacity-50"
-                  >
-                    {t('update')}
-                  </button>
-                  <button 
-                    onClick={() => toggleSub(sub.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                      sub.enabled 
-                        ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' 
-                        : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                    }`}
-                  >
-                    {sub.enabled ? t('disable') : t('enable')}
-                  </button>
+                  <div className="flex flex-col gap-1">
+                    <button 
+                      onClick={() => applySub(sub.url)}
+                      disabled={isLoading}
+                      className="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors disabled:opacity-50"
+                    >
+                      {t('update')}
+                    </button>
+                    <button 
+                      onClick={() => setViewingConvert(sub)}
+                      className="px-3 py-1.5 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-100 transition-colors"
+                    >
+                      {t('viewConvert')}
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <button 
+                      onClick={() => setEditingSub({ ...sub })}
+                      className="px-3 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-xs font-bold hover:bg-amber-100 transition-colors"
+                    >
+                      {t('edit')}
+                    </button>
+                    <button 
+                      onClick={() => toggleSub(sub.id)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                        sub.enabled 
+                          ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' 
+                          : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                      }`}
+                    >
+                      {sub.enabled ? t('disable') : t('enable')}
+                    </button>
+                  </div>
                   <button 
                     onClick={() => deleteSub(sub.id)}
-                    className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-100 transition-colors"
+                    className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-100 transition-colors self-start"
                   >
                     {t('delete')}
                   </button>
@@ -239,6 +295,119 @@ export default function SubscriptionsPage() {
           )}
         </div>
       </div>
+
+      {/* 编辑订阅弹窗 */}
+      {editingSub && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="text-xl font-bold text-slate-800">{t('editSub')}</h3>
+              <button 
+                onClick={() => setEditingSub(null)}
+                className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+              >
+                <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleEditSub} className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-500 ml-1">{t('name')}</label>
+                <input
+                  type="text"
+                  value={editingSub.name}
+                  onChange={(e) => setEditingSub({ ...editingSub, name: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  placeholder={t('placeholderName')}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-500 ml-1">{t('url')}</label>
+                <textarea
+                  value={editingSub.url}
+                  onChange={(e) => setEditingSub({ ...editingSub, url: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all min-h-[120px] font-mono text-sm"
+                  placeholder={t('placeholderUrl')}
+                />
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditingSub(null)}
+                  className="flex-1 px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="flex-[2] px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+                >
+                  {t('save')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 订阅转换配置弹窗 */}
+      {viewingConvert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="text-xl font-bold text-slate-800">{t('convertConfig')}</h3>
+              <button 
+                onClick={() => setViewingConvert(null)}
+                className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+              >
+                <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-8 overflow-auto max-h-[60vh]">
+              <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 break-all text-xs font-mono text-slate-500 leading-relaxed">
+                {viewingConvert.url}
+              </div>
+              
+              <div className="overflow-hidden border border-slate-100 rounded-2xl">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-50 text-slate-500 font-bold text-xs uppercase">
+                    <tr>
+                      <th className="px-6 py-4">{t('param')}</th>
+                      <th className="px-6 py-4">{t('value')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {parseConvertUrl(viewingConvert.url).map((param: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4 font-mono text-indigo-600 font-bold">{param.key}</td>
+                        <td className="px-6 py-4 font-mono text-slate-600 break-all">{decodeURIComponent(param.value)}</td>
+                      </tr>
+                    ))}
+                    {parseConvertUrl(viewingConvert.url).length === 0 && (
+                      <tr>
+                        <td colSpan={2} className="px-6 py-8 text-center text-slate-400 italic">
+                          No conversion parameters found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-100 flex justify-end bg-slate-50/50">
+              <button 
+                onClick={() => setViewingConvert(null)}
+                className="px-8 py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-all shadow-lg shadow-slate-200"
+              >
+                {t('close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

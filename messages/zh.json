@@ -87,7 +87,17 @@
     "total": "总量",
     "expire": "到期",
     "lastUpdate": "更新日期",
-    "never": "从未更新"
+    "never": "从未更新",
+    "updated": "订阅已更新",
+    "edit": "编辑",
+    "editSub": "编辑订阅",
+    "viewConvert": "查看转换配置",
+    "convertConfig": "转换配置详情",
+    "save": "保存",
+    "cancel": "取消",
+    "param": "参数",
+    "value": "数值",
+    "description": "说明"
   },
   "Logs": {
     "title": "系统日志",

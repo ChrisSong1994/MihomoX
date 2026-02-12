@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { NextResponse } from 'next/server';
 import { getSubscriptions, addSubscription, deleteSubscription, updateSubscription } from '@/lib/store';
+import { addLog } from '@/lib/mihomo';
 
 /**
  * 订阅管理 API 路由
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
     // 情况 1：添加到订阅列表
     if (name && url && !action) {
       const newSub = addSubscription({ name, url, enabled: true });
+      addLog(`[SUBSCRIPTION] Added new subscription: ${name}`);
       return NextResponse.json({ success: true, data: newSub });
     }
 
@@ -39,9 +41,12 @@ export async function POST(req: Request) {
       let urlsToFetch: string[] = [];
       if (targetUrl) {
         urlsToFetch = [targetUrl];
+        const sub = subs.find(s => s.url === targetUrl);
+        addLog(`[SUBSCRIPTION] Updating subscription: ${sub?.name || targetUrl}`);
       } else {
         // 如果未提供 URL，则应用所有已启用的订阅
         urlsToFetch = subs.filter(s => s.enabled).map(s => s.url);
+        addLog(`[SUBSCRIPTION] Applying ${urlsToFetch.length} enabled subscriptions`);
       }
 
       if (urlsToFetch.length === 0) {
@@ -219,6 +224,7 @@ export async function PATCH(req: Request) {
     
     // 更新订阅信息
     updateSubscription(id, { ...updates });
+    addLog(`[SUBSCRIPTION] Updated subscription: ${sub.name}`);
     return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e.message }, { status: 400 });
@@ -233,7 +239,12 @@ export async function DELETE(req: Request) {
     if (!id) {
       return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
     }
+    const subs = getSubscriptions();
+    const sub = subs.find(s => s.id === id);
     deleteSubscription(id);
+    if (sub) {
+      addLog(`[SUBSCRIPTION] Deleted subscription: ${sub.name}`);
+    }
     return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e.message }, { status: 400 });

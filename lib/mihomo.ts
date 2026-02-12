@@ -365,7 +365,7 @@ const runKernel = (bin: string, configDir: string) => {
 /**
  * 将日志写入内存缓冲并追加到当天日志文件
  */
-const addLog = (msg: string) => {
+export const addLog = (msg: string) => {
   const now = new Date();
   const timestamp = now.toLocaleTimeString();
   const dateStr = now.toISOString().split('T')[0]; // 日期格式：YYYY-MM-DD

@@ -87,7 +87,17 @@
     "total": "Total",
     "expire": "Expire",
     "lastUpdate": "Last Update",
-    "never": "Never"
+    "never": "Never",
+    "updated": "Subscription updated",
+    "edit": "Edit",
+    "editSub": "Edit Subscription",
+    "viewConvert": "View Conversion",
+    "convertConfig": "Conversion Config",
+    "save": "Save",
+    "cancel": "Cancel",
+    "param": "Parameter",
+    "value": "Value",
+    "description": "Description"
   },
   "Logs": {
     "title": "Logs",
