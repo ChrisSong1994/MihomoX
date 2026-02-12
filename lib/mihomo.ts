@@ -1,10 +1,9 @@
-import { spawn, ChildProcess, execSync } from 'child_process';
-import path from 'path';
-import fs from 'fs';
-import os from 'os';
-import yaml from 'js-yaml';
-import { getSettings, getInitialConfig, getSubscriptions } from './store';
-import { getPaths, ensureDirectories } from './paths';
+import { spawn, ChildProcess, execSync } from "child_process";
+import path from "path";
+import fs from "fs";
+import yaml from "js-yaml";
+import { getSettings, getInitialConfig, getSubscriptions } from "./store";
+import { getPaths, ensureDirectories } from "./paths";
 
 const paths = getPaths();
 
@@ -12,46 +11,60 @@ const paths = getPaths();
  * 核心配置生成逻辑：合并订阅内容与系统设置
  */
 export const generateFullConfig = () => {
-  const subs = getSubscriptions().filter(s => s.enabled);
+  const subs = getSubscriptions().filter((s) => s.enabled);
   const settings = getSettings();
   const initial = getInitialConfig();
 
   // 基础结构
   const mergedConfig: any = {
     proxies: [],
-    'proxy-groups': [],
+    "proxy-groups": [],
     rules: [],
-    ...initial // 以 initial.json 作为底色
+    secret: settings?.secret || initial.secret,
+    "mixed-port": settings?.mixed_port || initial.mixed_port,
+    "external-controller": settings?.controller_port || initial.controller_port,
+    "geodata-mode": true,
+    "geox-url": {
+      geoip: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat",
+      geosite: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat",
+      mmdb: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/country.mmdb",
+    },
   };
 
   // 1. 合并订阅内容
-  subs.forEach(sub => {
+  subs.forEach((sub) => {
     const filePath = path.join(paths.subscriptionsDir, `${sub.id}.yaml`);
     if (fs.existsSync(filePath)) {
       try {
-        const raw = fs.readFileSync(filePath, 'utf8');
+        const raw = fs.readFileSync(filePath, "utf8");
         let parsed: any;
         try {
           parsed = yaml.load(raw);
         } catch (e) {
-          const decoded = Buffer.from(raw, 'base64').toString();
+          const decoded = Buffer.from(raw, "base64").toString();
           parsed = yaml.load(decoded);
         }
 
-        if (parsed && typeof parsed === 'object') {
+        if (parsed && typeof parsed === "object") {
           // 合并 proxies
           if (Array.isArray(parsed.proxies)) {
             parsed.proxies.forEach((p: any) => {
-              if (!mergedConfig.proxies.find((existing: any) => existing.name === p.name)) {
+              if (
+                !mergedConfig.proxies.find(
+                  (existing: any) => existing.name === p.name,
+                )
+              ) {
                 mergedConfig.proxies.push(p);
               }
             });
           }
 
           // 合并 proxy-groups
-          if (Array.isArray(parsed['proxy-groups'])) {
-            parsed['proxy-groups'].forEach((g: any) => {
-              const existingGroup = mergedConfig['proxy-groups'].find((eg: any) => eg.name === g.name);
+          if (Array.isArray(parsed["proxy-groups"])) {
+            parsed["proxy-groups"].forEach((g: any) => {
+              const existingGroup = mergedConfig["proxy-groups"].find(
+                (eg: any) => eg.name === g.name,
+              );
               if (existingGroup) {
                 if (Array.isArray(g.proxies)) {
                   g.proxies.forEach((pm: any) => {
@@ -61,7 +74,7 @@ export const generateFullConfig = () => {
                   });
                 }
               } else {
-                mergedConfig['proxy-groups'].push(g);
+                mergedConfig["proxy-groups"].push(g);
               }
             });
           }
@@ -72,7 +85,10 @@ export const generateFullConfig = () => {
           }
         }
       } catch (err) {
-        console.error(`[Mihomo] Failed to merge subscription ${sub.name}:`, err);
+        console.error(
+          `[Mihomo] Failed to merge subscription ${sub.name}:`,
+          err,
+        );
       }
     }
   });
@@ -81,35 +97,27 @@ export const generateFullConfig = () => {
   const mixedPort = settings.mixed_port || initial.mixed_port || 7890;
   const controllerPort = settings.controller_port || 9099;
 
-  mergedConfig['mixed-port'] = mixedPort;
-  mergedConfig['external-controller'] = `127.0.0.1:${controllerPort}`;
-  mergedConfig['secret'] = process.env.MIHOMO_SECRET || initial.secret || '';
-  
-  // TUN 配置
-  mergedConfig['tun'] = {
-    enable: true,
-    stack: 'system',
-    'auto-route': true,
-    'auto-detect-interface': true,
-    'dns-hijack': ['any:53'],
-    ...(mergedConfig['tun'] || {})
-  };
-  
+  mergedConfig["mixed-port"] = mixedPort;
+  mergedConfig["external-controller"] = `127.0.0.1:${controllerPort}`;
+  mergedConfig["secret"] = process.env.MIHOMO_SECRET || initial.secret || "";
+
   // DNS 配置
-  if (!mergedConfig['dns']) mergedConfig['dns'] = {};
-  mergedConfig['dns'] = {
+  if (!mergedConfig["dns"]) mergedConfig["dns"] = {};
+  mergedConfig["dns"] = {
     enable: true,
     ipv6: false,
-    'enhanced-mode': 'fake-ip',
-    'nameserver': ['223.5.5.5', '119.29.29.29'],
-    ...mergedConfig['dns']
+    "enhanced-mode": "fake-ip",
+    nameserver: ["223.5.5.5", "119.29.29.29"],
+    ...mergedConfig["dns"],
   };
 
   // 3. 写入文件
   const configPath = paths.mihomoConfig;
-  fs.writeFileSync(configPath, yaml.dump(mergedConfig), 'utf8');
-  console.log(`[Mihomo] Full config.yaml generated with ${subs.length} subscriptions`);
-  
+  fs.writeFileSync(configPath, yaml.dump(mergedConfig), "utf8");
+  console.log(
+    `[Mihomo] Full config.yaml generated with ${subs.length} subscriptions`,
+  );
+
   return mergedConfig;
 };
 
@@ -119,7 +127,9 @@ export const generateFullConfig = () => {
 const ensureMihomoConfig = () => {
   const configPath = paths.mihomoConfig;
   if (!fs.existsSync(configPath)) {
-    console.log(`[Mihomo] Config file not found at ${configPath}, generating...`);
+    console.log(
+      `[Mihomo] Config file not found at ${configPath}, generating...`,
+    );
     generateFullConfig();
   }
 };
@@ -139,17 +149,17 @@ export const updateConfigFile = (updates: Record<string, any>) => {
   try {
     let config: any = {};
     if (fs.existsSync(configPath)) {
-      const fileContent = fs.readFileSync(configPath, 'utf8');
+      const fileContent = fs.readFileSync(configPath, "utf8");
       config = yaml.load(fileContent) || {};
     }
 
     // 深度合并或简单覆盖
     const newConfig = { ...config, ...updates };
-    
-    fs.writeFileSync(configPath, yaml.dump(newConfig), 'utf8');
+
+    fs.writeFileSync(configPath, yaml.dump(newConfig), "utf8");
     return { success: true };
   } catch (e: any) {
-    console.error('[Mihomo] Failed to save config file:', e);
+    console.error("[Mihomo] Failed to save config file:", e);
     return { success: false, error: e.message };
   }
 };
@@ -181,9 +191,9 @@ const isProcessRunning = (pid: number): boolean => {
  */
 const savePid = (pid: number) => {
   try {
-    fs.writeFileSync(PID_FILE, pid.toString(), 'utf8');
+    fs.writeFileSync(PID_FILE, pid.toString(), "utf8");
   } catch (e) {
-    console.error('[Mihomo] Failed to save PID file:', e);
+    console.error("[Mihomo] Failed to save PID file:", e);
   }
 };
 
@@ -206,11 +216,11 @@ const clearPid = () => {
 const getSavedPid = (): number | null => {
   try {
     if (fs.existsSync(PID_FILE)) {
-      const pidStr = fs.readFileSync(PID_FILE, 'utf8').trim();
+      const pidStr = fs.readFileSync(PID_FILE, "utf8").trim();
       return parseInt(pidStr, 10);
     }
   } catch (e) {
-    console.error('[Mihomo] Failed to read PID file:', e);
+    console.error("[Mihomo] Failed to read PID file:", e);
   }
   return null;
 };
@@ -245,28 +255,28 @@ export const getTrafficHistory = () => {
  */
 const startLogsMonitor = async () => {
   if (logsAbortController) return;
-  
-  console.log('[Mihomo] Starting logs monitor...');
+
+  console.log("[Mihomo] Starting logs monitor...");
   logsAbortController = new AbortController();
-  
+
   const runMonitor = async () => {
     try {
       const settings = getSettings();
       const controllerPort = settings.controller_port || 9099;
       const res = await fetch(`http://127.0.0.1:${controllerPort}/logs`, {
-        signal: logsAbortController?.signal
+        signal: logsAbortController?.signal,
       });
-      
+
       const reader = res.body?.getReader();
       if (!reader) return;
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         const text = new TextDecoder().decode(value);
-        const chunks = text.split('\n');
-        
+        const chunks = text.split("\n");
+
         for (const chunk of chunks) {
           if (!chunk.trim()) continue;
           try {
@@ -279,8 +289,8 @@ const startLogsMonitor = async () => {
         }
       }
     } catch (e: any) {
-      if (e.name === 'AbortError') return;
-      console.error('[Mihomo] Logs monitor error:', e.message);
+      if (e.name === "AbortError") return;
+      console.error("[Mihomo] Logs monitor error:", e.message);
       // 5 秒后重试
       setTimeout(() => {
         if (getKernelStatus() && logsAbortController) runMonitor();
@@ -296,39 +306,39 @@ const startLogsMonitor = async () => {
  */
 const startTrafficMonitor = async () => {
   if (trafficInterval) return;
-  
-  console.log('[Mihomo] Starting traffic monitor...');
-  
+
+  console.log("[Mihomo] Starting traffic monitor...");
+
   const controller = new AbortController();
-  
+
   const runMonitor = async () => {
     try {
       const settings = getSettings();
       const controllerPort = settings.controller_port || 9099;
       const res = await fetch(`http://127.0.0.1:${controllerPort}/traffic`, {
-        signal: controller.signal
+        signal: controller.signal,
       });
-      
+
       const reader = res.body?.getReader();
       if (!reader) {
-        console.error('[Mihomo] Failed to get traffic reader');
+        console.error("[Mihomo] Failed to get traffic reader");
         return;
       }
 
-      console.log('[Mihomo] Traffic monitor connected');
+      console.log("[Mihomo] Traffic monitor connected");
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         const text = new TextDecoder().decode(value);
-        const chunks = text.split('\n');
-        
+        const chunks = text.split("\n");
+
         for (const chunk of chunks) {
           if (!chunk.trim()) continue;
           try {
             // 部分版本可能会在前缀添加 "data: "
-            const jsonStr = chunk.startsWith('data: ') ? chunk.slice(6) : chunk;
+            const jsonStr = chunk.startsWith("data: ") ? chunk.slice(6) : chunk;
             const data = JSON.parse(jsonStr);
             updateTrafficHistory(data.up, data.down);
           } catch (e) {
@@ -337,9 +347,9 @@ const startTrafficMonitor = async () => {
         }
       }
     } catch (e: any) {
-      if (e.name === 'AbortError') return;
-      
-      console.error('[Mihomo] Traffic monitor error:', e.message);
+      if (e.name === "AbortError") return;
+
+      console.error("[Mihomo] Traffic monitor error:", e.message);
       // 5 秒后重试
       trafficInterval = setTimeout(() => {
         trafficInterval = null;
@@ -349,9 +359,9 @@ const startTrafficMonitor = async () => {
   };
 
   runMonitor();
-  
+
   // 设置标志避免重复定时器（当前采用递归/定时器方式）
-  trafficInterval = true as any; 
+  trafficInterval = true as any;
 };
 
 /**
@@ -360,11 +370,11 @@ const startTrafficMonitor = async () => {
  */
 const getBinaryName = () => {
   const platform = process.platform;
-  const arch = process.arch === 'x64' ? 'amd64' : process.arch;
+  const arch = process.arch === "x64" ? "amd64" : process.arch;
   let name = `mihomo-${platform}-${arch}`;
 
-  if (platform === 'win32') {
-    name += '.exe';
+  if (platform === "win32") {
+    name += ".exe";
   }
   return name;
 };
@@ -377,20 +387,26 @@ export const startKernel = () => {
   if (mihomoProcess) return;
 
   const binName = getBinaryName();
-  const bin = path.join(process.cwd(), 'bin', binName);
+  const bin = path.join(process.cwd(), "bin", binName);
   const configDir = paths.config;
 
   // 确保配置目录存在
   ensureDirectories();
 
-  // 确保 config.yaml 存在
-  ensureMihomoConfig();
+  // 始终重新生成 config.yaml 以确保配置最新
+  generateFullConfig();
 
   // 检查二进制文件是否存在
   if (!fs.existsSync(bin)) {
     console.error(`[Mihomo] Binary not found: ${bin}`);
     // 兜底：若缺少特定架构版本，尝试通用 amd64 版本
-    const fallbackBin = path.join(process.cwd(), 'bin', process.platform === 'win32' ? 'mihomo-windows-amd64.exe' : `mihomo-${process.platform}-amd64`);
+    const fallbackBin = path.join(
+      process.cwd(),
+      "bin",
+      process.platform === "win32"
+        ? "mihomo-windows-amd64.exe"
+        : `mihomo-${process.platform}-amd64`,
+    );
     if (fs.existsSync(fallbackBin)) {
       console.log(`[Mihomo] Using fallback binary: ${fallbackBin}`);
       runKernel(fallbackBin, configDir);
@@ -409,35 +425,45 @@ export const startKernel = () => {
  */
 const runKernel = (bin: string, configDir: string) => {
   // 在类 Unix 系统上确保可执行权限
-  if (process.platform !== 'win32') {
+  if (process.platform !== "win32") {
     try {
-      fs.chmodSync(bin, '755');
+      fs.chmodSync(bin, "755");
     } catch (err) {
       console.error(`[Mihomo] Failed to set execution permissions: ${err}`);
     }
   }
 
   console.log(`[Mihomo] Starting kernel: ${bin} -d ${configDir}`);
-  
+
   // 清空历史日志
   kernelLogs = [];
 
   // 获取动态端口配置
   const settings = getSettings();
-  const mixedPort = settings.mixed_port || 7890;
+  const initial = getInitialConfig();
   const controllerPort = settings.controller_port || 9099;
+  const secret = process.env.MIHOMO_SECRET || settings.secret || initial.secret || "";
 
-  // 准备启动参数，强制覆盖端口
+  // 准备启动参数
+  // 注意：部分内核版本不支持 --mixed-port 命令行参数，改用配置文件控制
+  // 仅保留基础的目录、控制器地址和密钥参数
   const args = [
-    '-d', configDir,
-    '--mixed-port', mixedPort.toString(),
-    '--external-controller', `127.0.0.1:${controllerPort}`
+    "-d",
+    configDir,
+    "-ext-ctl",
+    `127.0.0.1:${controllerPort}`,
   ];
+
+  if (secret) {
+    args.push("-secret", secret);
+  }
+
+  addLog(`[SYSTEM] Starting kernel with args: ${args.join(" ")}`);
 
   mihomoProcess = spawn(bin, args, {
     cwd: process.cwd(),
-    detached: false,
-    stdio: 'pipe'
+    detached: true,
+    stdio: "pipe",
   });
 
   if (mihomoProcess.pid) {
@@ -445,15 +471,14 @@ const runKernel = (bin: string, configDir: string) => {
     startTrafficMonitor();
     startLogsMonitor();
     addLog(`[SYSTEM] Kernel started with PID: ${mihomoProcess.pid}`);
-    // 若为分离进程，需要取消引用以便父进程独立退出
-    if (process.platform !== 'win32') {
-      mihomoProcess.unref();
-    }
+    
+    // 取消引用以便父进程（Next.js）在重启时不会强制杀掉子进程
+    mihomoProcess.unref();
   }
 
   // 处理标准输出日志
-  mihomoProcess.stdout?.on('data', (data) => {
-    const lines = data.toString().split('\n');
+  mihomoProcess.stdout?.on("data", (data) => {
+    const lines = data.toString().split("\n");
     lines.forEach((line: string) => {
       const trimmed = line.trim();
       if (trimmed) {
@@ -463,8 +488,8 @@ const runKernel = (bin: string, configDir: string) => {
   });
 
   // 处理标准错误日志
-  mihomoProcess.stderr?.on('data', (data) => {
-    const lines = data.toString().split('\n');
+  mihomoProcess.stderr?.on("data", (data) => {
+    const lines = data.toString().split("\n");
     lines.forEach((line: string) => {
       const trimmed = line.trim();
       if (trimmed) {
@@ -473,14 +498,14 @@ const runKernel = (bin: string, configDir: string) => {
     });
   });
 
-  mihomoProcess.on('close', (code) => {
+  mihomoProcess.on("close", (code) => {
     console.log(`[Mihomo] Kernel process exited with code: ${code}`);
     addLog(`[SYSTEM] Kernel process exited with code: ${code}`);
     mihomoProcess = null;
     clearPid();
   });
 
-  mihomoProcess.on('error', (err) => {
+  mihomoProcess.on("error", (err) => {
     console.error(`[Mihomo] Kernel failed to start: ${err}`);
     addLog(`[ERROR] Kernel failed to start: ${err.message}`);
     mihomoProcess = null;
@@ -493,9 +518,9 @@ const runKernel = (bin: string, configDir: string) => {
 export const addLog = (msg: string) => {
   const now = new Date();
   const timestamp = now.toLocaleTimeString();
-  const dateStr = now.toISOString().split('T')[0]; // 日期格式：YYYY-MM-DD
+  const dateStr = now.toISOString().split("T")[0]; // 日期格式：YYYY-MM-DD
   const formattedMsg = `[${timestamp}] ${msg}`;
-  
+
   // 内存缓冲
   kernelLogs.push(formattedMsg);
   if (kernelLogs.length > MAX_LOG_LINES) {
@@ -506,15 +531,15 @@ export const addLog = (msg: string) => {
   try {
     const settings = getSettings();
     const logDir = settings.logPath || getDefaultLogPath();
-    
+
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir, { recursive: true });
     }
 
     const logFile = path.join(logDir, `mihomo-${dateStr}.log`);
-    fs.appendFileSync(logFile, formattedMsg + '\n', 'utf8');
+    fs.appendFileSync(logFile, formattedMsg + "\n", "utf8");
   } catch (e) {
-    console.error('[Mihomo] Failed to persist log:', e);
+    console.error("[Mihomo] Failed to persist log:", e);
   }
 };
 
@@ -524,9 +549,9 @@ export const addLog = (msg: string) => {
  */
 export const stopKernel = () => {
   const currentPid = mihomoProcess?.pid || getSavedPid();
-  
+
   if (currentPid) {
-    if (process.platform === 'win32') {
+    if (process.platform === "win32") {
       try {
         // Windows 上使用 taskkill 结束进程树
         execSync(`taskkill /pid ${currentPid} /f /t`);
@@ -536,11 +561,11 @@ export const stopKernel = () => {
     } else {
       try {
         // 尝试结束指定进程或进程组
-        process.kill(currentPid, 'SIGTERM');
+        process.kill(currentPid, "SIGTERM");
         // 等待片刻检查是否仍在运行，然后强制结束
         setTimeout(() => {
           if (isProcessRunning(currentPid)) {
-            process.kill(currentPid, 'SIGKILL');
+            process.kill(currentPid, "SIGKILL");
           }
         }, 1000);
       } catch (e) {
@@ -550,7 +575,7 @@ export const stopKernel = () => {
     mihomoProcess = null;
     clearPid();
     if (trafficInterval) {
-      if (typeof trafficInterval !== 'boolean') {
+      if (typeof trafficInterval !== "boolean") {
         clearTimeout(trafficInterval);
       }
       trafficInterval = null;
@@ -569,16 +594,28 @@ export const stopKernel = () => {
 export const getKernelStatus = () => {
   // 1. 优先检查内存中的进程实例
   if (mihomoProcess) {
-    if (!trafficInterval) startTrafficMonitor();
-    return true;
+    if (mihomoProcess.pid && isProcessRunning(mihomoProcess.pid)) {
+      if (!trafficInterval) startTrafficMonitor();
+      if (!logsAbortController) startLogsMonitor();
+      return true;
+    } else {
+      console.log(`[Mihomo] Process in memory (PID: ${mihomoProcess.pid}) is not running.`);
+      mihomoProcess = null;
+      clearPid();
+    }
   }
 
-  // 2. 若进程重启，则检查已保存的 PID
+  // 2. 若内存实例丢失（如应用重启），则检查已保存的 PID
   const savedPid = getSavedPid();
-  if (savedPid && isProcessRunning(savedPid)) {
-    if (!trafficInterval) startTrafficMonitor();
-    if (!logsAbortController) startLogsMonitor();
-    return true;
+  if (savedPid) {
+    if (isProcessRunning(savedPid)) {
+      if (!trafficInterval) startTrafficMonitor();
+      if (!logsAbortController) startLogsMonitor();
+      return true;
+    } else {
+      console.log(`[Mihomo] Saved PID ${savedPid} is not running.`);
+      clearPid();
+    }
   }
 
   return false;
@@ -593,12 +630,14 @@ export const getKernelLogs = () => {
 
 // 系统启动时记录账号密码信息
 const logStartupInfo = () => {
-  const username = process.env.MIHOMONEXT_USERNAME || 'mihomonext';
-  const password = process.env.MIHOMONEXT_PASSWORD || 'admin-123456';
-  addLog(`[SYSTEM] MihomoNext started! Login Username: ${username}, Password: ${password}`);
+  const username = process.env.MIHOMONEXT_USERNAME || "mihomonext";
+  const password = process.env.MIHOMONEXT_PASSWORD || "admin-123456";
+  addLog(
+    `[SYSTEM] MihomoNext started! Login Username: ${username}, Password: ${password}`,
+  );
 };
 
 // 仅在服务端执行一次
-if (typeof window === 'undefined') {
+if (typeof window === "undefined") {
   logStartupInfo();
 }

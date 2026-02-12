@@ -30,6 +30,7 @@ export interface AppSettings {
   web_port?: number;
   mixed_port?: number;
   controller_port?: number;
+  secret?:string
 }
 
 const INITIAL_CONFIG_FILE = path.join(process.cwd(), 'config', 'inital.json');

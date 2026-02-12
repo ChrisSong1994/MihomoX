@@ -107,8 +107,12 @@
     "noConvertParams": "No conversion parameters found"
   },
   "Logs": {
-    "title": "Logs",
-    "clear": "Clear Logs"
+    "title": "System Logs",
+    "subtitle": "View real-time kernel output logs",
+    "clear": "Clear Logs",
+    "noLogs": "No logs available",
+    "refresh": "Auto Refresh",
+    "autoScroll": "Auto Scroll"
   },
   "Dashboard": {
     "upload": "Upload",

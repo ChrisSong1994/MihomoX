@@ -108,7 +108,11 @@
   },
   "Logs": {
     "title": "系统日志",
-    "clear": "清空日志"
+    "subtitle": "查看内核实时输出日志",
+    "clear": "清空日志",
+    "noLogs": "暂无日志",
+    "refresh": "自动刷新",
+    "autoScroll": "自动滚动"
   },
   "Dashboard": {
     "upload": "上传速度",

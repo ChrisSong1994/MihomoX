@@ -49,6 +49,7 @@ export async function POST(req: Request) {
     if (name && url && !action) {
       const newSub = addSubscription({ name, url, enabled: true });
       addLog(`[SUBSCRIPTION] Added new subscription: ${name}`);
+      generateFullConfig();
       return NextResponse.json({ success: true, data: newSub });
     }
 
@@ -224,10 +225,8 @@ export async function PATCH(req: Request) {
     updateSubscription(id, { ...updates });
     addLog(`[SUBSCRIPTION] Updated subscription: ${sub.name}`);
 
-    // 如果启用了/禁用了订阅，重新生成完整配置
-    if (updates.enabled !== undefined) {
-      generateFullConfig();
-    }
+    // 重新生成完整配置
+    generateFullConfig();
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
@@ -254,6 +253,10 @@ export async function DELETE(req: Request) {
     if (sub) {
       addLog(`[SUBSCRIPTION] Deleted subscription: ${sub.name}`);
     }
+    
+    // 重新生成完整配置
+    generateFullConfig();
+    
     return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e.message }, { status: 400 });
