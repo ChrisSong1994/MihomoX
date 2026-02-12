@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
@@ -66,7 +65,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Stats Overview Cards */}
+      {/* 统计概览卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
           <div className="text-slate-500 text-sm font-medium mb-2">{t('upload')}</div>
@@ -114,9 +113,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Detail Sections */}
+      {/* 详细信息分区 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Traffic Chart Panel */}
+        {/* 流量历史图表面板 */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <h3 className="font-bold text-slate-800">{t('trafficHistory')}</h3>
@@ -204,7 +203,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* IP Info Panel */}
+        {/* IP 信息面板 */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
             <h3 className="font-bold text-slate-800">{t('ipInfo')}</h3>

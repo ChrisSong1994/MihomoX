@@ -8,7 +8,7 @@ export async function GET() {
   let kernelConfig = null;
   let localConfig = null;
 
-  // 1. Load local config from file first as baseline
+  // 1. 先从本地文件加载配置作为基础
   try {
     const configPath = path.join(process.cwd(), 'config', 'config.yaml');
     if (fs.existsSync(configPath)) {
@@ -19,7 +19,7 @@ export async function GET() {
     console.error('Failed to read local config:', e);
   }
 
-  // 2. Try to get current config from kernel if running
+  // 2. 如果内核运行，尝试从内核获取当前配置
   if (isRunning) {
     try {
       const res = await fetch('http://127.0.0.1:9099/configs');
@@ -27,16 +27,16 @@ export async function GET() {
         kernelConfig = await res.json();
       }
     } catch (e) {
-      // Kernel API might not be ready yet
+      // 内核 API 可能尚未就绪
     }
   }
 
-  // 3. Merge configs: kernel config takes precedence if available
+  // 3. 合并配置：若存在内核配置，则以其为准
   const finalConfig = kernelConfig 
     ? { ...(localConfig as any), ...(kernelConfig as any) } 
     : localConfig;
 
-  // 4. Ensure mixed-port is available in response for UI
+  // 4. 确保响应中包含 mixed-port 以供前端 UI 使用
   if (finalConfig && !finalConfig['mixed-port'] && finalConfig['port']) {
     finalConfig['mixed-port'] = finalConfig['port'];
   }

@@ -13,7 +13,7 @@ export interface Subscription {
   status: 'active' | 'expired' | 'error' | 'idle';
 }
 
-// Ensure directory exists
+// 确保配置目录存在
 const ensureDir = () => {
   const dir = path.dirname(SUBS_FILE);
   if (!fs.existsSync(dir)) {

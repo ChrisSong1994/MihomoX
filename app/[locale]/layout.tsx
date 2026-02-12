@@ -36,10 +36,10 @@ export default async function RootLayout({
       >
         <NextIntlClientProvider messages={messages}>
           <div className="flex min-h-screen">
-            {/* Sidebar Navigation */}
+            {/* 侧边栏导航 */}
             <Sidebar />
 
-            {/* Main Content Area */}
+            {/* 主内容区域 */}
             <main className="flex-1 ml-64 min-h-screen">
               <Header />
               <div className="p-8">

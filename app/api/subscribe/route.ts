@@ -5,11 +5,11 @@ import { NextResponse } from 'next/server';
 import { getSubscriptions, addSubscription, deleteSubscription, updateSubscription } from '@/lib/store';
 
 /**
- * Subscription API Route
- * Handles CRUD operations for subscription list and fetching/applying subscription content
+ * 订阅管理 API 路由
+ * 负责订阅列表的增删改查，以及订阅内容的获取与应用
  */
 
-// GET: List all subscriptions
+// GET：获取全部订阅列表
 export async function GET() {
   try {
     const subscriptions = getSubscriptions();
@@ -19,19 +19,19 @@ export async function GET() {
   }
 }
 
-// POST: Add a new subscription or apply a subscription content
+// POST：添加新订阅或应用订阅内容
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { url, name, action } = body;
 
-    // Case 1: Add to subscription list
+    // 情况 1：添加到订阅列表
     if (name && url && !action) {
       const newSub = addSubscription({ name, url, enabled: true });
       return NextResponse.json({ success: true, data: newSub });
     }
 
-    // Case 2: Apply subscriptions (single or all enabled)
+    // 情况 2：应用订阅（单个或全部启用的订阅）
     if (action === 'apply' || (url && !name)) {
       const targetUrl = url;
       const subs = getSubscriptions();
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       if (targetUrl) {
         urlsToFetch = [targetUrl];
       } else {
-        // If no URL provided, apply all enabled ones
+        // 如果未提供 URL，则应用所有已启用的订阅
         urlsToFetch = subs.filter(s => s.enabled).map(s => s.url);
       }
 
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
           }
 
           if (parsed && typeof parsed === 'object') {
-            // Merge proxies
+            // 合并 proxies
             if (Array.isArray(parsed.proxies)) {
               parsed.proxies.forEach((p: any) => {
                 if (!mergedConfig.proxies.find((existing: any) => existing.name === p.name)) {
@@ -91,12 +91,12 @@ export async function POST(req: Request) {
               });
             }
 
-            // Merge proxy-groups
+            // 合并 proxy-groups
             if (Array.isArray(parsed['proxy-groups'])) {
               parsed['proxy-groups'].forEach((g: any) => {
                 const existingGroup = mergedConfig['proxy-groups'].find((eg: any) => eg.name === g.name);
                 if (existingGroup) {
-                  // Merge members
+                  // 合并分组成员
                   if (Array.isArray(g.proxies)) {
                     g.proxies.forEach((pm: any) => {
                       if (!existingGroup.proxies.includes(pm)) {
@@ -110,27 +110,27 @@ export async function POST(req: Request) {
               });
             }
 
-            // Merge rules
+            // 合并规则
             if (Array.isArray(parsed.rules)) {
               mergedConfig.rules = [...mergedConfig.rules, ...parsed.rules];
             }
           }
         } catch (err) {
           console.error(`[Subscribe] Failed to fetch ${fetchUrl}:`, err);
-          // Continue with other subscriptions
+          // 出错时继续处理其他订阅
         } finally {
           clearTimeout(timeoutId);
         }
       };
 
-      // Fetch all in parallel
+      // 并行获取与合并各订阅
       await Promise.all(urlsToFetch.map(fetchAndMerge));
 
       if (mergedConfig.proxies.length === 0) {
         return NextResponse.json({ success: false, error: 'No valid proxies found in subscriptions' }, { status: 400 });
       }
 
-      // Step 2: Inject custom settings
+      // 步骤 2：注入自定义配置项
       const finalConfig = { ...mergedConfig };
       finalConfig['external-controller'] = '127.0.0.1:9099';
       finalConfig['secret'] = process.env.MIHOMO_SECRET || '';
@@ -151,7 +151,7 @@ export async function POST(req: Request) {
       finalConfig['dns']['enhanced-mode'] = 'fake-ip';
       finalConfig['dns']['nameserver'] = ['223.5.5.5', '119.29.29.29'];
 
-      // Step 3: Save to config.yaml
+      // 步骤 3：写入到 config.yaml
       const configPath = path.join(process.cwd(), 'config/config.yaml');
       const configDir = path.dirname(configPath);
       
@@ -175,7 +175,7 @@ export async function POST(req: Request) {
   }
 }
 
-// PATCH: Update subscription status (toggle enable/disable)
+// PATCH：更新订阅状态（启用/禁用切换）
 export async function PATCH(req: Request) {
   try {
     const { id, ...updates } = await req.json();
@@ -185,7 +185,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ success: false, error: 'Subscription not found' }, { status: 404 });
     }
     
-    // If toggling enabled, we just update the store
+    // 切换启用状态时，直接更新存储即可
     updateSubscription(id, { ...updates, enabled: updates.enabled !== undefined ? updates.enabled : !sub.enabled });
     return NextResponse.json({ success: true });
   } catch (e: any) {
@@ -193,7 +193,7 @@ export async function PATCH(req: Request) {
   }
 }
 
-// DELETE: Remove subscription from list
+// DELETE：从列表中移除订阅
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);

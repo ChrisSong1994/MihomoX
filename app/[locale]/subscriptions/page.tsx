@@ -100,7 +100,7 @@ export default function SubscriptionsPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Add Subscription Form */}
+      {/* 添加订阅表单 */}
       <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-slate-800">{t('addNew')}</h2>
@@ -144,7 +144,7 @@ export default function SubscriptionsPage() {
         </form>
       </div>
 
-      {/* Subscription List */}
+      {/* 订阅列表 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between px-2">
           <h2 className="font-bold text-slate-800">{t('saved')} ({subs.length})</h2>

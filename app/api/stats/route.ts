@@ -13,12 +13,12 @@ export async function GET(req: Request) {
     osUtils.cpuUsage((v) => resolve(v));
   });
   
-  const freeMem = osUtils.freemem(); // MB
-  const totalMem = osUtils.totalmem(); // MB
+  const freeMem = osUtils.freemem(); // 单位：MB
+  const totalMem = osUtils.totalmem(); // 单位：MB
   const usedMem = totalMem - freeMem;
   const memUsage = (usedMem / totalMem) * 100;
 
-  // Get current traffic from history
+  // 从历史记录中获取当前流量
   const history = getTrafficHistory();
   const currentTraffic = history.length > 0 ? history[history.length - 1] : { up: 0, down: 0 };
 

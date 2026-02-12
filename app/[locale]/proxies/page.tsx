@@ -121,7 +121,7 @@ export default function ProxiesPage() {
         </button>
       </div>
       
-      {/* Policy Group Selection */}
+      {/* 策略组选择 */}
       <div className="flex flex-wrap gap-2">
         {groups.map(group => (
           <button
@@ -138,7 +138,7 @@ export default function ProxiesPage() {
         ))}
       </div>
 
-      {/* Node List */}
+      {/* 节点列表 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {loading ? (
           Array(8).fill(0).map((_, i) => (

@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin();
 const config: NextConfig = {
   async rewrites() {
     return [
-      // Forward all /mihomo-api/* requests to local 9099 port
+      // 将所有 /mihomo-api/* 请求转发到本地 9099 端口
       {
         source: '/mihomo-api/:path*',
         destination: 'http://127.0.0.1:9099/:path*',

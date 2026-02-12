@@ -5,7 +5,7 @@ import yaml from 'js-yaml';
 import { getSettings } from './store';
 
 /**
- * Update and persist config.yaml configuration
+ * 更新并持久化写入 config.yaml 配置
  */
 export const updateConfigFile = (updates: Record<string, any>) => {
   const configPath = path.join(process.cwd(), 'config', 'config.yaml');
@@ -16,7 +16,7 @@ export const updateConfigFile = (updates: Record<string, any>) => {
       config = yaml.load(fileContent) || {};
     }
 
-    // Deep merge or simple overwrite
+    // 深度合并或简单覆盖
     const newConfig = { ...config, ...updates };
     
     fs.writeFileSync(configPath, yaml.dump(newConfig), 'utf8');
@@ -28,8 +28,8 @@ export const updateConfigFile = (updates: Record<string, any>) => {
 };
 
 /**
- * Mihomo Kernel Management Class
- * Handles binary startup, shutdown, status detection, and log stream management
+ * Mihomo 内核管理类
+ * 负责二进制启动、关闭、状态检测以及日志流管理
  */
 
 let mihomoProcess: ChildProcess | null = null;
@@ -37,7 +37,7 @@ let trafficInterval: NodeJS.Timeout | null = null;
 const PID_FILE = path.join(process.cwd(), 'config', 'mihomo.pid');
 
 /**
- * Check if a process is actually running by PID
+ * 根据 PID 检查进程是否正在运行
  */
 const isProcessRunning = (pid: number): boolean => {
   try {
@@ -49,7 +49,7 @@ const isProcessRunning = (pid: number): boolean => {
 };
 
 /**
- * Save PID to local file
+ * 将 PID 保存到本地文件
  */
 const savePid = (pid: number) => {
   try {
@@ -60,7 +60,7 @@ const savePid = (pid: number) => {
 };
 
 /**
- * Remove PID file
+ * 移除 PID 文件
  */
 const clearPid = () => {
   try {
@@ -68,12 +68,12 @@ const clearPid = () => {
       fs.unlinkSync(PID_FILE);
     }
   } catch (e) {
-    // Ignore error if file doesn't exist
+    // 若文件不存在则忽略错误
   }
 };
 
 /**
- * Get PID from file
+ * 从文件中读取 PID
  */
 const getSavedPid = (): number | null => {
   try {
@@ -86,16 +86,16 @@ const getSavedPid = (): number | null => {
   }
   return null;
 };
-// Store recent logs for frontend debug view
+// 存储近期日志，供前端调试视图使用
 let kernelLogs: string[] = [];
 const MAX_LOG_LINES = 1000;
 
-// Store traffic history (last 1 hour, every 2 seconds = 1800 points)
+// 存储流量历史（最近 1 小时，每 2 秒记录一次，共约 1800 条）
 let trafficHistory: Array<{ time: number; up: number; down: number }> = [];
 const MAX_TRAFFIC_POINTS = 1800;
 
 /**
- * Update traffic history
+ * 更新流量历史
  */
 const updateTrafficHistory = (up: number, down: number) => {
   const now = Date.now();
@@ -106,14 +106,14 @@ const updateTrafficHistory = (up: number, down: number) => {
 };
 
 /**
- * Get traffic history
+ * 获取流量历史
  */
 export const getTrafficHistory = () => {
   return trafficHistory;
 };
 
 /**
- * Start Traffic Monitor
+ * 启动流量监控
  */
 const startTrafficMonitor = async () => {
   if (trafficInterval) return;
@@ -146,12 +146,12 @@ const startTrafficMonitor = async () => {
         for (const chunk of chunks) {
           if (!chunk.trim()) continue;
           try {
-            // Some versions might prefix with "data: "
+            // 部分版本可能会在前缀添加 "data: "
             const jsonStr = chunk.startsWith('data: ') ? chunk.slice(6) : chunk;
             const data = JSON.parse(jsonStr);
             updateTrafficHistory(data.up, data.down);
           } catch (e) {
-            // Skip invalid JSON or partial chunks
+            // 跳过无效的 JSON 或不完整数据片段
           }
         }
       }
@@ -159,7 +159,7 @@ const startTrafficMonitor = async () => {
       if (e.name === 'AbortError') return;
       
       console.error('[Mihomo] Traffic monitor error:', e.message);
-      // Retry after 5s
+      // 5 秒后重试
       trafficInterval = setTimeout(() => {
         trafficInterval = null;
         if (getKernelStatus()) runMonitor();
@@ -169,13 +169,13 @@ const startTrafficMonitor = async () => {
 
   runMonitor();
   
-  // Set a flag to avoid multiple intervals, though we use recursion/timeout now
+  // 设置标志避免重复定时器（当前采用递归/定时器方式）
   trafficInterval = true as any; 
 };
 
 /**
- * Get matching binary name based on current platform
- * Supports Windows (.exe), macOS, Linux and their amd64/arm64 architectures
+ * 根据当前平台获取匹配的二进制文件名
+ * 支持 Windows（.exe）、macOS、Linux 及其 amd64/arm64 架构
  */
 const getBinaryName = () => {
   const platform = process.platform;
@@ -189,8 +189,8 @@ const getBinaryName = () => {
 };
 
 /**
- * Start Mihomo Kernel
- * Includes binary check, permission settings, process creation, and log capture
+ * 启动 Mihomo 内核
+ * 包含二进制文件检查、权限设置、进程创建与日志捕获
  */
 export const startKernel = () => {
   if (mihomoProcess) return;
@@ -199,15 +199,15 @@ export const startKernel = () => {
   const bin = path.join(process.cwd(), 'bin', binName);
   const configDir = path.join(process.cwd(), 'config');
 
-  // Ensure config directory exists
+  // 确保配置目录存在
   if (!fs.existsSync(configDir)) {
     fs.mkdirSync(configDir, { recursive: true });
   }
 
-  // Check if binary exists
+  // 检查二进制文件是否存在
   if (!fs.existsSync(bin)) {
     console.error(`[Mihomo] Binary not found: ${bin}`);
-    // Fallback: try universal amd64 version if architecture-specific is missing
+    // 兜底：若缺少特定架构版本，尝试通用 amd64 版本
     const fallbackBin = path.join(process.cwd(), 'bin', process.platform === 'win32' ? 'mihomo-windows-amd64.exe' : `mihomo-${process.platform}-amd64`);
     if (fs.existsSync(fallbackBin)) {
       console.log(`[Mihomo] Using fallback binary: ${fallbackBin}`);
@@ -221,12 +221,12 @@ export const startKernel = () => {
 };
 
 /**
- * Internal function: execute binary and configure process monitoring
- * @param bin Binary file path
- * @param configDir Config directory path
+ * 内部函数：执行二进制并配置进程监控
+ * @param bin 二进制文件路径
+ * @param configDir 配置目录路径
  */
 const runKernel = (bin: string, configDir: string) => {
-  // Ensure executable permissions on Unix systems
+  // 在类 Unix 系统上确保可执行权限
   if (process.platform !== 'win32') {
     try {
       fs.chmodSync(bin, '755');
@@ -237,25 +237,25 @@ const runKernel = (bin: string, configDir: string) => {
 
   console.log(`[Mihomo] Starting kernel: ${bin} -d ${configDir}`);
   
-  // Clear previous logs
+  // 清空历史日志
   kernelLogs = [];
 
-  // Start process using spawn
+  // 使用 spawn 启动进程
   mihomoProcess = spawn(bin, ['-d', configDir], {
     detached: process.platform !== 'win32',
-    stdio: ['ignore', 'pipe', 'pipe'] // Capture stdout and stderr
+    stdio: ['ignore', 'pipe', 'pipe'] // 捕获标准输出与标准错误
   });
 
   if (mihomoProcess.pid) {
     savePid(mihomoProcess.pid);
     startTrafficMonitor();
-    // If detached, we need to unref so the parent can exit independently
+    // 若为分离进程，需要取消引用以便父进程独立退出
     if (process.platform !== 'win32') {
       mihomoProcess.unref();
     }
   }
 
-  // Handle stdout logs
+  // 处理标准输出日志
   mihomoProcess.stdout?.on('data', (data) => {
     const line = data.toString().trim();
     if (line) {
@@ -263,7 +263,7 @@ const runKernel = (bin: string, configDir: string) => {
     }
   });
 
-  // Handle stderr logs
+  // 处理标准错误日志
   mihomoProcess.stderr?.on('data', (data) => {
     const line = data.toString().trim();
     if (line) {
@@ -286,21 +286,21 @@ const runKernel = (bin: string, configDir: string) => {
 };
 
 /**
- * Add log line to memory buffer and persist to daily file
+ * 将日志写入内存缓冲并追加到当天日志文件
  */
 const addLog = (msg: string) => {
   const now = new Date();
   const timestamp = now.toLocaleTimeString();
-  const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  const dateStr = now.toISOString().split('T')[0]; // 日期格式：YYYY-MM-DD
   const formattedMsg = `[${timestamp}] ${msg}`;
   
-  // Memory buffer
+  // 内存缓冲
   kernelLogs.push(formattedMsg);
   if (kernelLogs.length > MAX_LOG_LINES) {
     kernelLogs.shift();
   }
 
-  // Persistence
+  // 持久化
   try {
     const settings = getSettings();
     const logDir = settings.logPath || path.join(process.cwd(), 'logs');
@@ -317,8 +317,8 @@ const addLog = (msg: string) => {
 };
 
 /**
- * Stop Mihomo Kernel
- * Different strategies for Windows and Unix platforms
+ * 停止 Mihomo 内核
+ * 在 Windows 与类 Unix 平台采取不同策略
  */
 export const stopKernel = () => {
   const currentPid = mihomoProcess?.pid || getSavedPid();
@@ -326,16 +326,16 @@ export const stopKernel = () => {
   if (currentPid) {
     if (process.platform === 'win32') {
       try {
-        // Use taskkill on Windows to end process tree
+        // Windows 上使用 taskkill 结束进程树
         execSync(`taskkill /pid ${currentPid} /f /t`);
       } catch (e) {
         if (mihomoProcess) mihomoProcess.kill();
       }
     } else {
       try {
-        // Try to kill the specific process or process group
+        // 尝试结束指定进程或进程组
         process.kill(currentPid, 'SIGTERM');
-        // Wait a bit and check if still running, then force kill
+        // 等待片刻检查是否仍在运行，然后强制结束
         setTimeout(() => {
           if (isProcessRunning(currentPid)) {
             process.kill(currentPid, 'SIGKILL');
@@ -358,16 +358,16 @@ export const stopKernel = () => {
 };
 
 /**
- * Get kernel running status
+ * 获取内核运行状态
  */
 export const getKernelStatus = () => {
-  // 1. Check in-memory process first
+  // 1. 优先检查内存中的进程实例
   if (mihomoProcess) {
     if (!trafficInterval) startTrafficMonitor();
     return true;
   }
 
-  // 2. Check saved PID if process restarted
+  // 2. 若进程重启，则检查已保存的 PID
   const savedPid = getSavedPid();
   if (savedPid && isProcessRunning(savedPid)) {
     if (!trafficInterval) startTrafficMonitor();
@@ -378,7 +378,7 @@ export const getKernelStatus = () => {
 };
 
 /**
- * Get kernel logs from memory
+ * 从内存中获取内核日志
  */
 export const getKernelLogs = () => {
   return kernelLogs;

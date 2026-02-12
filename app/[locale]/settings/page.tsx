@@ -99,31 +99,31 @@ export default function SettingsPage() {
   };
 
   const handleLanguageChange = async (newLocale: string) => {
-    // 1. Persist to local settings.json
+    // 1. 持久化到本地 settings.json
     await saveAppSettings({ locale: newLocale });
     
-    // 2. Set cookie for next-intl
+    // 2. 设置 next-intl 的 Cookie
     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
     
-    // 3. Explicitly navigate to the new locale path
+    // 3. 显式跳转到新的语言路径
     const newPath = window.location.pathname.replace(/^\/(zh|en)/, `/${newLocale}`);
     window.location.href = newPath;
   };
 
   const updateConfig = async (key: string, value: any) => {
     try {
-      // Ensure port is a number
+      // 确保端口为数字
       const finalValue = (key === 'port' || key === 'mixed-port' || key === 'socks-port') 
         ? parseInt(value) 
         : value;
 
-      // 1. Update running kernel config via RESTful API
+      // 1. 通过 REST API 更新运行中的内核配置
       await fetch('/mihomo-api/configs', {
         method: 'PATCH',
         body: JSON.stringify({ [key]: finalValue }),
       });
 
-      // 2. Persist to local config.yaml file
+      // 2. 将配置持久化到本地 config.yaml 文件
       await fetch('/api/config/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -140,7 +140,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Kernel Control */}
+      {/* 内核控制 */}
       <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -239,7 +239,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Proxy Settings */}
+      {/* 服务配置 */}
       <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
         <h2 className="text-xl font-bold text-slate-800 mb-6">{t('serviceConfig')}</h2>
         <div className="space-y-6">
@@ -325,12 +325,12 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* About */}
+      {/* 关于 */}
       <div className="text-center text-slate-400 text-xs">
         MihomoNext Dashboard v1.0.0 • Powered by Next.js & Mihomo
       </div>
 
-      {/* Config Modal */}
+      {/* 配置文件弹窗 */}
       {showConfig && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-4xl max-h-[80vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 duration-200">
