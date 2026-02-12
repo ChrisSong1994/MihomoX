@@ -44,7 +44,7 @@
     "configContent": "Configuration Content",
     "close": "Close",
     "logPath": "Log Path",
-    "logPathDesc": "Directory to save system logs, default is logs folder in project root",
+    "logPathDesc": "Directory to save system logs, default is the system-standard log path",
     "placeholderLogPath": "Enter log path",
     "language": "Display Language",
     "languageDesc": "Select the language for the interface (Chinese / English)"
@@ -97,7 +97,14 @@
     "cancel": "Cancel",
     "param": "Parameter",
     "value": "Value",
-    "description": "Description"
+    "description": "Description",
+    "viewLocalConfig": "View Local Config",
+    "localConfigTitle": "Local Subscription Config",
+    "configNotFound": "Local config file not found. Please update the subscription first.",
+    "close": "Close",
+    "lines": "lines",
+    "noLogs": "No logs available...",
+    "noConvertParams": "No conversion parameters found"
   },
   "Logs": {
     "title": "Logs",

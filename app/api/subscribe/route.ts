@@ -4,6 +4,9 @@ import path from 'path';
 import { NextResponse } from 'next/server';
 import { getSubscriptions, addSubscription, deleteSubscription, updateSubscription } from '@/lib/store';
 import { addLog } from '@/lib/mihomo';
+import { getPaths } from '@/lib/paths';
+
+const paths = getPaths();
 
 /**
  * 订阅管理 API 路由
@@ -11,9 +14,25 @@ import { addLog } from '@/lib/mihomo';
  */
 
 // GET：获取全部订阅列表
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const subscriptions = getSubscriptions();
+    const url = new URL(req.url);
+    const id = url.searchParams.get('id');
+
+    // 如果提供了 id，则返回该订阅的本地配置文件内容
+    if (id) {
+      const filePath = path.join(paths.subscriptionsDir, `${id}.yaml`);
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, 'utf8');
+        return NextResponse.json({ success: true, content });
+      }
+      return NextResponse.json({ success: false, error: 'Subscription config file not found' }, { status: 404 });
+    }
+
+    const subscriptions = getSubscriptions().map(sub => ({
+      ...sub,
+      hasLocalConfig: fs.existsSync(path.join(paths.subscriptionsDir, `${sub.id}.yaml`))
+    }));
     return NextResponse.json({ success: true, subscriptions });
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e.message }, { status: 500 });
@@ -110,6 +129,13 @@ export async function POST(req: Request) {
 
           const rawConfig = await res.text();
           
+          // 保存原始配置到本地文件
+          const sub = getSubscriptions().find(s => s.url === fetchUrl);
+          if (sub) {
+            const filePath = path.join(paths.subscriptionsDir, `${sub.id}.yaml`);
+            fs.writeFileSync(filePath, rawConfig, 'utf8');
+          }
+          
           let parsed: any;
           try {
             parsed = yaml.load(rawConfig);
@@ -189,7 +215,7 @@ export async function POST(req: Request) {
       finalConfig['dns']['nameserver'] = ['223.5.5.5', '119.29.29.29'];
 
       // 步骤 3：写入到 config.yaml
-      const configPath = path.join(process.cwd(), 'config/config.yaml');
+      const configPath = paths.mihomoConfig;
       const configDir = path.dirname(configPath);
       
       if (!fs.existsSync(configDir)) {
@@ -242,6 +268,11 @@ export async function DELETE(req: Request) {
     const subs = getSubscriptions();
     const sub = subs.find(s => s.id === id);
     deleteSubscription(id);
+    // 同时删除本地配置文件
+    const filePath = path.join(paths.subscriptionsDir, `${id}.yaml`);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
     if (sub) {
       addLog(`[SUBSCRIPTION] Deleted subscription: ${sub.name}`);
     }

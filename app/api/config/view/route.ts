@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
-import path from 'path';
+import { getPaths } from '@/lib/paths';
 
 export async function GET() {
   try {
-    const configPath = path.join(process.cwd(), 'config', 'config.yaml');
+    const paths = getPaths();
+    const configPath = paths.mihomoConfig;
     if (!fs.existsSync(configPath)) {
       return NextResponse.json({ success: false, error: 'Config file not found' }, { status: 404 });
     }

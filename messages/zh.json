@@ -44,7 +44,7 @@
     "configContent": "配置文件内容",
     "close": "关闭",
     "logPath": "日志保存路径",
-    "logPathDesc": "系统日志保存的文件夹，默认为项目根目录下的 logs 文件夹",
+    "logPathDesc": "系统日志保存的文件夹，默认为系统标准的日志路径",
     "placeholderLogPath": "输入日志保存路径",
     "language": "显示语言",
     "languageDesc": "选择界面显示的语言 (中文 / English)"
@@ -97,7 +97,14 @@
     "cancel": "取消",
     "param": "参数",
     "value": "数值",
-    "description": "说明"
+    "description": "说明",
+    "viewLocalConfig": "查看本地配置",
+    "localConfigTitle": "本地订阅配置内容",
+    "configNotFound": "本地配置文件不存在，请先尝试更新订阅",
+    "close": "关闭",
+    "lines": "行数",
+    "noLogs": "暂无日志内容...",
+    "noConvertParams": "未发现转换参数"
   },
   "Logs": {
     "title": "系统日志",

@@ -4,30 +4,22 @@ import fs from 'fs';
 import os from 'os';
 import yaml from 'js-yaml';
 import { getSettings } from './store';
+import { getPaths, ensureDirectories } from './paths';
+
+const paths = getPaths();
 
 /**
  * 获取系统默认日志路径
  */
 export const getDefaultLogPath = () => {
-  const homeDir = os.homedir();
-  const appName = 'MihomoNext';
-  
-  switch (process.platform) {
-    case 'darwin':
-      return path.join(homeDir, 'Library', 'Logs', appName);
-    case 'win32':
-      return path.join(process.env.LOCALAPPDATA || path.join(homeDir, 'AppData', 'Local'), appName, 'Logs');
-    default:
-      // Linux 及其他
-      return path.join(homeDir, '.cache', appName.toLowerCase(), 'logs');
-  }
+  return paths.logs;
 };
 
 /**
  * 更新并持久化写入 config.yaml 配置
  */
 export const updateConfigFile = (updates: Record<string, any>) => {
-  const configPath = path.join(process.cwd(), 'config', 'config.yaml');
+  const configPath = paths.mihomoConfig;
   try {
     let config: any = {};
     if (fs.existsSync(configPath)) {
@@ -54,7 +46,7 @@ export const updateConfigFile = (updates: Record<string, any>) => {
 let mihomoProcess: ChildProcess | null = null;
 let trafficInterval: NodeJS.Timeout | null = null;
 let logsAbortController: AbortController | null = null;
-const PID_FILE = path.join(process.cwd(), 'config', 'mihomo.pid');
+const PID_FILE = paths.mihomoPid;
 
 /**
  * 根据 PID 检查进程是否正在运行
@@ -266,12 +258,10 @@ export const startKernel = () => {
 
   const binName = getBinaryName();
   const bin = path.join(process.cwd(), 'bin', binName);
-  const configDir = path.join(process.cwd(), 'config');
+  const configDir = paths.config;
 
   // 确保配置目录存在
-  if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true });
-  }
+  ensureDirectories();
 
   // 检查二进制文件是否存在
   if (!fs.existsSync(bin)) {
@@ -465,3 +455,15 @@ export const getKernelStatus = () => {
 export const getKernelLogs = () => {
   return kernelLogs;
 };
+
+// 系统启动时记录账号密码信息
+const logStartupInfo = () => {
+  const username = process.env.MIHOMONEXT_USERNAME || 'mihomonext';
+  const password = process.env.MIHOMONEXT_PASSWORD || 'admin-123456';
+  addLog(`[SYSTEM] MihomoNext started! Login Username: ${username}, Password: ${password}`);
+};
+
+// 仅在服务端执行一次
+if (typeof window === 'undefined') {
+  logStartupInfo();
+}

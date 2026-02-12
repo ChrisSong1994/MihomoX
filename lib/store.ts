@@ -1,7 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import { getPaths, ensureDirectories } from './paths';
 
-const SUBS_FILE = path.join(process.cwd(), 'config', 'subscriptions.json');
+const paths = getPaths();
+const SUBS_FILE = paths.subsFile;
+const SETTINGS_FILE = paths.settingsFile;
 
 export interface Subscription {
   id: string;
@@ -18,13 +21,8 @@ export interface Subscription {
 
 // 确保配置目录存在
 const ensureDir = () => {
-  const dir = path.dirname(SUBS_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  ensureDirectories();
 };
-
-const SETTINGS_FILE = path.join(process.cwd(), 'config', 'settings.json');
 
 export interface AppSettings {
   logPath: string;
@@ -32,7 +30,7 @@ export interface AppSettings {
 }
 
 const defaultSettings: AppSettings = {
-  logPath: path.join(process.cwd(), 'logs'),
+  logPath: paths.logs,
   locale: 'zh'
 };
 

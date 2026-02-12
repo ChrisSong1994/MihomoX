@@ -6,11 +6,17 @@ const APP_NAME = 'MihomoNext';
 
 /**
  * 获取应用程序数据根目录
+ * 开发环境: 项目根目录下的 .userdata 文件夹
  * macOS: ~/Library/Application Support/MihomoNext
  * Windows: %APPDATA%/MihomoNext
  * Linux: ~/.config/mihomonext
  */
 export const getAppDataDir = () => {
+  // 开发环境下使用项目根目录下的 .userdata
+  if (process.env.NODE_ENV === 'development') {
+    return path.join(process.cwd(), '.userdata');
+  }
+
   const homeDir = os.homedir();
   
   switch (process.platform) {
@@ -34,6 +40,7 @@ export const getPaths = () => {
     logs: path.join(base, 'logs'),
     subsFile: path.join(base, 'config', 'subscriptions.json'),
     settingsFile: path.join(base, 'config', 'settings.json'),
+    subscriptionsDir: path.join(base, 'subscriptions'),
     mihomoConfig: path.join(base, 'config', 'config.yaml'),
     mihomoPid: path.join(base, 'config', 'mihomo.pid'),
   };
@@ -44,7 +51,9 @@ export const getPaths = () => {
  */
 export const ensureDirectories = () => {
   const paths = getPaths();
-  [paths.base, paths.config, paths.logs].forEach(dir => {
+  
+  // 创建目录
+  [paths.base, paths.config, paths.logs, paths.subscriptionsDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }

@@ -1,16 +1,20 @@
 import { startKernel, stopKernel, getKernelStatus } from '@/lib/mihomo';
 import fs from 'fs';
-import path from 'path';
 import yaml from 'js-yaml';
+import { getPaths, ensureDirectories } from '@/lib/paths';
 
 export async function GET() {
+  const paths = getPaths();
+  // 确保目录存在
+  ensureDirectories();
+
   const isRunning = getKernelStatus();
   let kernelConfig = null;
   let localConfig = null;
 
   // 1. 先从本地文件加载配置作为基础
   try {
-    const configPath = path.join(process.cwd(), 'config', 'config.yaml');
+    const configPath = paths.mihomoConfig;
     if (fs.existsSync(configPath)) {
       const fileContent = fs.readFileSync(configPath, 'utf8');
       localConfig = yaml.load(fileContent);

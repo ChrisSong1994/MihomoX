@@ -11,7 +11,8 @@ export default function SubscriptionsPage() {
   const [newSub, setNewSub] = useState({ name: '', url: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [editingSub, setEditingSub] = useState<any>(null);
-  const [viewingConvert, setViewingConvert] = useState<any>(null);
+  const [viewingConfig, setViewingConfig] = useState<any>(null);
+  const [configContent, setConfigContent] = useState<string>('');
 
   const fetchSubs = async () => {
     try {
@@ -101,19 +102,6 @@ export default function SubscriptionsPage() {
     }
   };
 
-  const parseConvertUrl = (url: string) => {
-    try {
-      const urlObj = new URL(url);
-      const params: any[] = [];
-      urlObj.searchParams.forEach((value, key) => {
-        params.push({ key, value });
-      });
-      return params;
-    } catch (e) {
-      return [];
-    }
-  };
-
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -144,6 +132,8 @@ export default function SubscriptionsPage() {
         } else {
           showToast(t('update') + ' ' + (data.message || 'Success'), 'success');
         }
+        // 重新获取订阅列表，因为 hasLocalConfig 可能已更新
+        fetchSubs();
       } else {
         showToast('Error: ' + data.error, 'error');
       }
@@ -151,6 +141,23 @@ export default function SubscriptionsPage() {
       console.error('Apply subscription error:', e);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchConfigContent = async (id: string) => {
+    try {
+      const res = await fetch(`/api/subscribe?id=${id}`);
+      const data = await res.json();
+      if (data.success) {
+        setConfigContent(data.content);
+      } else {
+        showToast(t('configNotFound'), 'error');
+        setViewingConfig(null);
+      }
+    } catch (e) {
+      console.error('Fetch config content error:', e);
+      showToast('Error fetching config content', 'error');
+      setViewingConfig(null);
     }
   };
 
@@ -259,10 +266,18 @@ export default function SubscriptionsPage() {
                       {t('update')}
                     </button>
                     <button 
-                      onClick={() => setViewingConvert(sub)}
-                      className="px-3 py-1.5 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-100 transition-colors"
+                      onClick={() => {
+                        setViewingConfig(sub);
+                        fetchConfigContent(sub.id);
+                      }}
+                      disabled={!sub.hasLocalConfig}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
+                        sub.hasLocalConfig 
+                          ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' 
+                          : 'bg-slate-50 text-slate-300 cursor-not-allowed'
+                      }`}
                     >
-                      {t('viewConvert')}
+                      {t('viewLocalConfig')}
                     </button>
                   </div>
                   <div className="flex flex-col gap-1">
@@ -351,14 +366,20 @@ export default function SubscriptionsPage() {
         </div>
       )}
 
-      {/* 订阅转换配置弹窗 */}
-      {viewingConvert && (
+      {/* 本地订阅配置内容弹窗 */}
+      {viewingConfig && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-4xl max-h-[70vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <h3 className="text-xl font-bold text-slate-800">{t('convertConfig')}</h3>
+              <div>
+                <h3 className="text-xl font-bold text-slate-800">{t('localConfigTitle')}</h3>
+                <p className="text-xs text-slate-400 mt-1">{viewingConfig.name}</p>
+              </div>
               <button 
-                onClick={() => setViewingConvert(null)}
+                onClick={() => {
+                  setViewingConfig(null);
+                  setConfigContent('');
+                }}
                 className="p-2 hover:bg-slate-200 rounded-full transition-colors"
               >
                 <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -366,40 +387,25 @@ export default function SubscriptionsPage() {
                 </svg>
               </button>
             </div>
-            <div className="p-8 overflow-auto max-h-[60vh]">
-              <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 break-all text-xs font-mono text-slate-500 leading-relaxed">
-                {viewingConvert.url}
-              </div>
-              
-              <div className="overflow-hidden border border-slate-100 rounded-2xl">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-500 font-bold text-xs uppercase">
-                    <tr>
-                      <th className="px-6 py-4">{t('param')}</th>
-                      <th className="px-6 py-4">{t('value')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {parseConvertUrl(viewingConvert.url).map((param: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 font-mono text-indigo-600 font-bold">{param.key}</td>
-                        <td className="px-6 py-4 font-mono text-slate-600 break-all">{decodeURIComponent(param.value)}</td>
-                      </tr>
-                    ))}
-                    {parseConvertUrl(viewingConvert.url).length === 0 && (
-                      <tr>
-                        <td colSpan={2} className="px-6 py-8 text-center text-slate-400 italic">
-                          No conversion parameters found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+            <div className="p-0 overflow-hidden flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-auto p-6 bg-slate-950 font-mono text-sm leading-relaxed scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                {configContent ? (
+                  <pre className="text-emerald-400 whitespace-pre-wrap break-all">
+                    {configContent}
+                  </pre>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-slate-500 italic">
+                    {t('applying')}
+                  </div>
+                )}
               </div>
             </div>
             <div className="p-6 border-t border-slate-100 flex justify-end bg-slate-50/50">
               <button 
-                onClick={() => setViewingConvert(null)}
+                onClick={() => {
+                  setViewingConfig(null);
+                  setConfigContent('');
+                }}
                 className="px-8 py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition-all shadow-lg shadow-slate-200"
               >
                 {t('close')}
