@@ -1,8 +1,6 @@
 import createMiddleware from 'next-intl/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 
 const intlMiddleware = createMiddleware({
   // 支持的所有语言列表
@@ -18,24 +16,42 @@ const intlMiddleware = createMiddleware({
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 针对根路径，根据持久化设置判断是否需要重定向
-  if (pathname === '/') {
-    try {
-      const settingsPath = path.join(process.cwd(), 'config', 'settings.json');
-      if (fs.existsSync(settingsPath)) {
-        const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-        if (settings.locale && (settings.locale === 'en' || settings.locale === 'zh')) {
-          // 如果存在持久化语言设置，且与当前不一致，可以进行重定向
-          // 但 next-intl 中间件已能很好地处理基于 Cookie 的语言识别
-          // 最关键的是确保已正确设置语言 Cookie
-        }
-      }
-    } catch (e) {
-      // 忽略中间件读取文件失败的错误
+  // 1. 设置路径名 Header，以便在 Layout 中判断
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', pathname);
+
+  // 2. 检查认证状态
+  const authToken = request.cookies.get('auth_token')?.value;
+  const isAuthenticated = authToken === 'mihomonext_authenticated';
+
+  // 获取语言前缀（如果有）
+  const localeMatch = pathname.match(/^\/(zh|en)(\/|$)/);
+  const locale = localeMatch ? localeMatch[1] : '';
+  const purePathname = locale ? pathname.replace(/^\/(zh|en)/, '') : pathname;
+
+  // 3. 处理登录页面访问
+  if (purePathname === '/login') {
+    // 如果已登录且访问登录页，重定向到首页
+    if (isAuthenticated) {
+      return NextResponse.redirect(new URL(`/${locale || 'zh'}`, request.url));
+    }
+    // 未登录访问登录页，允许通过
+  } else {
+    // 4. 保护其他页面，未登录则重定向到登录页
+    if (!isAuthenticated) {
+      const loginUrl = new URL(`/${locale || 'zh'}/login`, request.url);
+      return NextResponse.redirect(loginUrl);
     }
   }
 
-  return intlMiddleware(request);
+  // 5. 针对根路径，让 next-intl 自动处理语言重定向
+  // Middleware 环境不支持 Node.js fs/path 模块，因此无法在此读取 settings.json
+  // next-intl 会根据浏览器 Accept-Language 或 Cookie 自动处理默认语言
+  
+  // 执行 intl 中间件并传入修改后的 Headers
+  const response = intlMiddleware(request);
+  response.headers.set('x-pathname', pathname);
+  return response;
 }
 
 export const config = {

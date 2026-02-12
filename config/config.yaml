@@ -1,3 +1,8 @@
+mixed-port: 7890
+allow-lan: true
+mode: rule
+log-level: info
+external-controller: 127.0.0.1:9099
 proxies:
   - name: 有效期2026/02/23,剩余:67.81GB
     type: trojan
@@ -984,7 +989,6 @@ rules:
   - IP-CIDR,100.64.0.0/10,DIRECT
   - GEOIP,CN,DIRECT
   - MATCH,Proxy
-external-controller: 127.0.0.1:9099
 secret: ''
 tun:
   enable: true

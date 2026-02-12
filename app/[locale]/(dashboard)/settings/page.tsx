@@ -113,15 +113,16 @@ export default function SettingsPage() {
   const updateConfig = async (key: string, value: any) => {
     try {
       // 确保端口为数字
-      const finalValue = (key === 'port' || key === 'mixed-port' || key === 'socks-port') 
-        ? parseInt(value) 
-        : value;
+      const isPortKey = key === 'port' || key === 'mixed-port' || key === 'socks-port' || key === 'tproxy-port';
+      const finalValue = isPortKey ? parseInt(value) : value;
 
       // 1. 通过 REST API 更新运行中的内核配置
-      await fetch('/mihomo-api/configs', {
-        method: 'PATCH',
-        body: JSON.stringify({ [key]: finalValue }),
-      });
+      if (running) {
+        await fetch('/mihomo-api/configs', {
+          method: 'PATCH',
+          body: JSON.stringify({ [key]: finalValue }),
+        });
+      }
 
       // 2. 将配置持久化到本地 config.yaml 文件
       await fetch('/api/config/update', {
@@ -136,6 +137,56 @@ export default function SettingsPage() {
     } catch (e: any) {
       setMessage(e.message);
     }
+  };
+
+  const PortItem = ({ label, configKey }: { label: string, configKey: string }) => {
+    const currentVal = config?.[configKey] || '';
+    
+    return (
+      <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+        <div className="text-xs text-slate-400 font-bold uppercase mb-1">{label}</div>
+        <div className="flex items-center justify-between">
+          {editingPort === configKey ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={portValue}
+                onChange={(e) => setPortValue(e.target.value.replace(/\D/g, ''))}
+                className="w-20 px-2 py-1 bg-white border border-indigo-300 rounded text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                autoFocus
+                onBlur={() => {
+                  if (portValue && portValue !== currentVal.toString()) {
+                    updateConfig(configKey, portValue);
+                  }
+                  setEditingPort(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (portValue && portValue !== currentVal.toString()) {
+                      updateConfig(configKey, portValue);
+                    }
+                    setEditingPort(null);
+                  }
+                }}
+              />
+            </div>
+          ) : (
+            <div 
+              className="text-sm font-mono text-slate-600 cursor-pointer hover:text-indigo-600 flex items-center gap-2"
+              onClick={() => {
+                setEditingPort(configKey);
+                setPortValue(currentVal.toString());
+              }}
+            >
+              {currentVal || '--'}
+              <svg className="w-3 h-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -180,7 +231,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
             <div className="text-xs text-slate-400 font-bold uppercase mb-1">{t('status')}</div>
             <div className={`text-sm font-bold ${running ? 'text-emerald-600' : 'text-slate-400'}`}>
@@ -191,51 +242,9 @@ export default function SettingsPage() {
             <div className="text-xs text-slate-400 font-bold uppercase mb-1">{t('controllerAddress')}</div>
             <div className="text-sm font-mono text-slate-600">127.0.0.1:9099</div>
           </div>
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-            <div className="text-xs text-slate-400 font-bold uppercase mb-1">{t('mixedPort')}</div>
-            <div className="flex items-center justify-between">
-              {editingPort === 'mixed-port' ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={portValue}
-                    onChange={(e) => setPortValue(e.target.value.replace(/\D/g, ''))}
-                    className="w-20 px-2 py-1 bg-white border border-indigo-300 rounded text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    autoFocus
-                    onBlur={() => {
-                      const currentPort = (config?.['mixed-port'] || config?.port || '').toString();
-                      if (portValue && portValue !== currentPort) {
-                        updateConfig('mixed-port', portValue);
-                      }
-                      setEditingPort(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const currentPort = (config?.['mixed-port'] || config?.port || '').toString();
-                        if (portValue && portValue !== currentPort) {
-                          updateConfig('mixed-port', portValue);
-                        }
-                        setEditingPort(null);
-                      }
-                    }}
-                  />
-                </div>
-              ) : (
-                <div 
-                  className="text-sm font-mono text-slate-600 cursor-pointer hover:text-indigo-600 flex items-center gap-2"
-                  onClick={() => {
-                    setEditingPort('mixed-port');
-                    setPortValue((config?.['mixed-port'] || config?.port || '').toString());
-                  }}
-                >
-                  {config?.['mixed-port'] || config?.port || '--'}
-                  <svg className="w-3 h-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </div>
-              )}
-            </div>
-          </div>
+          <PortItem label={t('mixedPort')} configKey="mixed-port" />
+          <PortItem label={t('httpPort')} configKey="port" />
+          <PortItem label={t('socksPort')} configKey="socks-port" />
         </div>
       </div>
 

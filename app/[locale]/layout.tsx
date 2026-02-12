@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 
@@ -21,6 +19,9 @@ export const metadata: Metadata = {
   description: "An integrated Clash tool based on Mihomo kernel",
 };
 
+/**
+ * 根布局组件，处理 i18n 提供者和基础样式
+ */
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -35,18 +36,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50`}
       >
         <NextIntlClientProvider messages={messages}>
-          <div className="flex min-h-screen">
-            {/* 侧边栏导航 */}
-            <Sidebar />
-
-            {/* 主内容区域 */}
-            <main className="flex-1 ml-64 min-h-screen">
-              <Header />
-              <div className="p-8">
-                {children}
-              </div>
-            </main>
-          </div>
+          {children}
         </NextIntlClientProvider>
       </body>
     </html>

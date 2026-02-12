@@ -3,8 +3,9 @@
     "status": "Status",
     "proxies": "Proxies",
     "subscriptions": "Subscriptions",
-    "logs": "Logs",
-    "settings": "Settings"
+    "logs": "System Logs",
+    "settings": "System Settings",
+    "logout": "Logout"
   },
   "Header": {
     "running": "Running",
@@ -108,5 +109,14 @@
   "Common": {
     "save": "Save",
     "cancel": "Cancel"
+  },
+  "Login": {
+    "title": "Login to MihomoNext",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Login",
+    "error": "Invalid username or password",
+    "placeholderUsername": "Enter username",
+    "placeholderPassword": "Enter password"
   }
 }

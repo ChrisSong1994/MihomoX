@@ -4,7 +4,8 @@
     "proxies": "代理节点",
     "subscriptions": "订阅管理",
     "logs": "系统日志",
-    "settings": "系统设置"
+    "settings": "系统设置",
+    "logout": "退出登录"
   },
   "Header": {
     "running": "运行中",
@@ -108,5 +109,14 @@
   "Common": {
     "save": "保存",
     "cancel": "取消"
+  },
+  "Login": {
+    "title": "登录 MihomoNext",
+    "username": "用户名",
+    "password": "密码",
+    "submit": "登录",
+    "error": "用户名或密码错误",
+    "placeholderUsername": "请输入用户名",
+    "placeholderPassword": "请输入密码"
   }
 }
