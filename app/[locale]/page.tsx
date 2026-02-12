@@ -71,7 +71,7 @@ export default function Dashboard() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
           <div className="text-slate-500 text-sm font-medium mb-2">{t('upload')}</div>
           <div className="text-2xl font-bold text-slate-800">
-            {stats?.network?.up || '0 KB/s'}
+            {formatBytes(stats?.network?.up || 0)}
           </div>
           <div className="mt-4 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
             <div className="h-full bg-indigo-500 w-1/3" />
@@ -81,7 +81,7 @@ export default function Dashboard() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
           <div className="text-slate-500 text-sm font-medium mb-2">{t('download')}</div>
           <div className="text-2xl font-bold text-slate-800">
-            {stats?.network?.down || '0 KB/s'}
+            {formatBytes(stats?.network?.down || 0)}
           </div>
           <div className="mt-4 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
             <div className="h-full bg-violet-500 w-1/2" />
@@ -91,7 +91,7 @@ export default function Dashboard() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
           <div className="text-slate-500 text-sm font-medium mb-2">{t('memory')}</div>
           <div className="text-2xl font-bold text-slate-800">
-            {stats?.memory?.used || '0 MB'}
+            {stats?.memory?.used || 0} MB
           </div>
           <div className="mt-4 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
             <div 

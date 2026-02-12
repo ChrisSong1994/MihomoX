@@ -1,39 +1,3 @@
-port: 7890
-socks-port: 7891
-allow-lan: false
-mode: rule
-log-level: info
-external-controller: 127.0.0.1:9099
-secret: ''
-dns:
-  enable: true
-  ipv6: false
-  nameserver:
-    - 223.5.5.5
-    - 119.29.29.29
-  fallback:
-    - 8.8.8.8
-    - tls://dns.rubyfish.cn:853
-    - tls://1.0.0.1:853
-    - tls://dns.google:853
-    - https://dns.rubyfish.cn/dns-query
-    - https://cloudflare-dns.com/dns-query
-    - https://dns.google/dns-query
-  fallback-filter:
-    geoip: true
-    ipcidr:
-      - 240.0.0.0/4
-      - 0.0.0.0/32
-      - 127.0.0.1/32
-    domain:
-      - +.google.com
-      - +.facebook.com
-      - +.youtube.com
-      - +.xn--ngstr-lra8j.com
-      - +.google.cn
-      - +.googleapis.cn
-      - +.gvt1.com
-  enhanced-mode: fake-ip
 proxies:
   - name: 有效期2026/02/23,剩余:67.81GB
     type: trojan
@@ -1020,6 +984,8 @@ rules:
   - IP-CIDR,100.64.0.0/10,DIRECT
   - GEOIP,CN,DIRECT
   - MATCH,Proxy
+external-controller: 127.0.0.1:9099
+secret: ''
 tun:
   enable: true
   stack: system
@@ -1027,3 +993,10 @@ tun:
   auto-detect-interface: true
   dns-hijack:
     - any:53
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: fake-ip
+  nameserver:
+    - 223.5.5.5
+    - 119.29.29.29

@@ -72,7 +72,7 @@ export default function SubscriptionsPage() {
     }
   };
 
-  const applySub = async (url: string) => {
+  const applySub = async (url?: string) => {
     setIsLoading(true);
     try {
       const res = await fetch('/api/subscribe', {
@@ -82,7 +82,12 @@ export default function SubscriptionsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        alert(t('update') + ' ' + (data.message || 'Success'));
+        if (!url) {
+          const enabledCount = subs.filter(s => s.enabled).length;
+          alert(t('mergeSuccess', { count: enabledCount }));
+        } else {
+          alert(t('update') + ' ' + (data.message || 'Success'));
+        }
       } else {
         alert('Error: ' + data.error);
       }
@@ -97,7 +102,21 @@ export default function SubscriptionsPage() {
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Add Subscription Form */}
       <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-800 mb-6">{t('addNew')}</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-slate-800">{t('addNew')}</h2>
+          <button
+            onClick={() => applySub()}
+            disabled={isLoading || subs.filter(s => s.enabled).length === 0}
+            className="px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {isLoading ? t('applying') : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                {t('applyEnabled')}
+              </>
+            )}
+          </button>
+        </div>
         <form onSubmit={handleAddSub} className="space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
             <input

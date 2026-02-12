@@ -41,7 +41,12 @@
     "direct": "直连",
     "viewConfig": "查看配置文件",
     "configContent": "配置文件内容",
-    "close": "关闭"
+    "close": "关闭",
+    "logPath": "日志保存路径",
+    "logPathDesc": "系统日志保存的文件夹，默认为项目根目录下的 logs 文件夹",
+    "placeholderLogPath": "输入日志保存路径",
+    "language": "显示语言",
+    "languageDesc": "选择界面显示的语言 (中文 / English)"
   },
   "Proxies": {
     "title": "代理节点",
@@ -73,7 +78,10 @@
     "enabled": "已启用",
     "disabled": "已禁用",
     "enable": "启用",
-    "disable": "禁用"
+    "disable": "禁用",
+    "applyEnabled": "应用所有启用的订阅",
+    "applying": "应用中...",
+    "mergeSuccess": "成功合并并应用了 {count} 个订阅"
   },
   "Logs": {
     "title": "系统日志",

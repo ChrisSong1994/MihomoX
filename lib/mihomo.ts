@@ -2,6 +2,7 @@ import { spawn, ChildProcess, execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import yaml from 'js-yaml';
+import { getSettings } from './store';
 
 /**
  * Update and persist config.yaml configuration
@@ -114,44 +115,62 @@ export const getTrafficHistory = () => {
 /**
  * Start Traffic Monitor
  */
-const startTrafficMonitor = () => {
+const startTrafficMonitor = async () => {
   if (trafficInterval) return;
   
-  trafficInterval = setInterval(async () => {
+  console.log('[Mihomo] Starting traffic monitor...');
+  
+  const controller = new AbortController();
+  
+  const runMonitor = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:9099/traffic');
+      const res = await fetch('http://127.0.0.1:9099/traffic', {
+        signal: controller.signal
+      });
+      
       const reader = res.body?.getReader();
-      if (!reader) return;
+      if (!reader) {
+        console.error('[Mihomo] Failed to get traffic reader');
+        return;
+      }
+
+      console.log('[Mihomo] Traffic monitor connected');
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         
         const text = new TextDecoder().decode(value);
-        const lines = text.split('\n');
+        const chunks = text.split('\n');
         
-        for (const line of lines) {
-          if (!line.trim()) continue;
+        for (const chunk of chunks) {
+          if (!chunk.trim()) continue;
           try {
-            const data = JSON.parse(line);
+            // Some versions might prefix with "data: "
+            const jsonStr = chunk.startsWith('data: ') ? chunk.slice(6) : chunk;
+            const data = JSON.parse(jsonStr);
             updateTrafficHistory(data.up, data.down);
           } catch (e) {
-            // Skip invalid JSON
+            // Skip invalid JSON or partial chunks
           }
         }
       }
-    } catch (e) {
-      // Kernel might be stopped
-      if (trafficInterval) {
-        clearInterval(trafficInterval);
+    } catch (e: any) {
+      if (e.name === 'AbortError') return;
+      
+      console.error('[Mihomo] Traffic monitor error:', e.message);
+      // Retry after 5s
+      trafficInterval = setTimeout(() => {
         trafficInterval = null;
-      }
-      // Retry after 5s if still running
-      setTimeout(() => {
-        if (getKernelStatus()) startTrafficMonitor();
+        if (getKernelStatus()) runMonitor();
       }, 5000);
     }
-  }, 2000);
+  };
+
+  runMonitor();
+  
+  // Set a flag to avoid multiple intervals, though we use recursion/timeout now
+  trafficInterval = true as any; 
 };
 
 /**
@@ -267,14 +286,33 @@ const runKernel = (bin: string, configDir: string) => {
 };
 
 /**
- * Add log line to memory buffer with fixed size
+ * Add log line to memory buffer and persist to daily file
  */
 const addLog = (msg: string) => {
-  const timestamp = new Date().toLocaleTimeString();
+  const now = new Date();
+  const timestamp = now.toLocaleTimeString();
+  const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
   const formattedMsg = `[${timestamp}] ${msg}`;
+  
+  // Memory buffer
   kernelLogs.push(formattedMsg);
   if (kernelLogs.length > MAX_LOG_LINES) {
     kernelLogs.shift();
+  }
+
+  // Persistence
+  try {
+    const settings = getSettings();
+    const logDir = settings.logPath || path.join(process.cwd(), 'logs');
+    
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+
+    const logFile = path.join(logDir, `mihomo-${dateStr}.log`);
+    fs.appendFileSync(logFile, formattedMsg + '\n', 'utf8');
+  } catch (e) {
+    console.error('[Mihomo] Failed to persist log:', e);
   }
 };
 
@@ -310,7 +348,9 @@ export const stopKernel = () => {
     mihomoProcess = null;
     clearPid();
     if (trafficInterval) {
-      clearInterval(trafficInterval);
+      if (typeof trafficInterval !== 'boolean') {
+        clearTimeout(trafficInterval);
+      }
       trafficInterval = null;
     }
     addLog(`[SYSTEM] Kernel stopped by user`);

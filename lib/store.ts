@@ -21,6 +21,39 @@ const ensureDir = () => {
   }
 };
 
+const SETTINGS_FILE = path.join(process.cwd(), 'config', 'settings.json');
+
+export interface AppSettings {
+  logPath: string;
+  locale: string;
+}
+
+const defaultSettings: AppSettings = {
+  logPath: path.join(process.cwd(), 'logs'),
+  locale: 'zh'
+};
+
+export const getSettings = (): AppSettings => {
+  ensureDir();
+  if (!fs.existsSync(SETTINGS_FILE)) {
+    return defaultSettings;
+  }
+  try {
+    const data = fs.readFileSync(SETTINGS_FILE, 'utf-8');
+    return { ...defaultSettings, ...JSON.parse(data) };
+  } catch (e) {
+    return defaultSettings;
+  }
+};
+
+export const saveSettings = (settings: Partial<AppSettings>) => {
+  ensureDir();
+  const current = getSettings();
+  const updated = { ...current, ...settings };
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(updated, null, 2));
+  return updated;
+};
+
 export const getSubscriptions = (): Subscription[] => {
   ensureDir();
   if (!fs.existsSync(SUBS_FILE)) {

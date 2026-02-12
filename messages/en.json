@@ -41,7 +41,12 @@
     "direct": "Direct",
     "viewConfig": "View Config File",
     "configContent": "Configuration Content",
-    "close": "Close"
+    "close": "Close",
+    "logPath": "Log Path",
+    "logPathDesc": "Directory to save system logs, default is logs folder in project root",
+    "placeholderLogPath": "Enter log path",
+    "language": "Display Language",
+    "languageDesc": "Select the language for the interface (Chinese / English)"
   },
   "Proxies": {
     "title": "Proxies",
@@ -73,7 +78,10 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "enable": "Enable",
-    "disable": "Disable"
+    "disable": "Disable",
+    "applyEnabled": "Apply All Enabled",
+    "applying": "Applying...",
+    "mergeSuccess": "Successfully merged and applied {count} subscriptions"
   },
   "Logs": {
     "title": "Logs",

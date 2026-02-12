@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const t = useTranslations('Settings');
@@ -13,6 +14,9 @@ export default function SettingsPage() {
   const [portValue, setPortValue] = useState<string>('');
   const [showConfig, setShowConfig] = useState(false);
   const [configContent, setConfigContent] = useState('');
+  const [appSettings, setAppSettings] = useState<any>({ logPath: '' });
+  const locale = useLocale();
+  const router = useRouter();
 
   const fetchStatus = async () => {
     try {
@@ -20,6 +24,16 @@ export default function SettingsPage() {
       const data = await res.json();
       setRunning(data.running);
       setConfig(data.config);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchAppSettings = async () => {
+    try {
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      setAppSettings(data);
     } catch (e) {
       console.error(e);
     }
@@ -44,6 +58,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetchStatus();
+    fetchAppSettings();
   }, []);
 
   const handleKernelAction = async (action: 'start' | 'stop') => {
@@ -63,6 +78,36 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const saveAppSettings = async (updates: any) => {
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAppSettings(data.settings);
+        setMessage(t('updated'));
+        setTimeout(() => setMessage(''), 2000);
+      }
+    } catch (e: any) {
+      setMessage(e.message);
+    }
+  };
+
+  const handleLanguageChange = async (newLocale: string) => {
+    // 1. Persist to local settings.json
+    await saveAppSettings({ locale: newLocale });
+    
+    // 2. Set cookie for next-intl
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
+    
+    // 3. Explicitly navigate to the new locale path
+    const newPath = window.location.pathname.replace(/^\/(zh|en)/, `/${newLocale}`);
+    window.location.href = newPath;
   };
 
   const updateConfig = async (key: string, value: any) => {
@@ -229,6 +274,21 @@ export default function SettingsPage() {
 
           <div className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-xl transition-colors">
             <div>
+              <div className="font-bold text-slate-700">{t('language')}</div>
+              <div className="text-slate-400 text-sm">{t('languageDesc')}</div>
+            </div>
+            <select 
+              value={locale}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            >
+              <option value="zh">简体中文</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+
+          <div className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-xl transition-colors">
+            <div>
               <div className="font-bold text-slate-700">{t('logLevel')}</div>
               <div className="text-slate-400 text-sm">{t('logLevelDesc')}</div>
             </div>
@@ -243,6 +303,24 @@ export default function SettingsPage() {
               <option value="debug">Debug</option>
               <option value="silent">Silent</option>
             </select>
+          </div>
+
+          <div className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-xl transition-colors">
+            <div className="flex-1 mr-8">
+              <div className="font-bold text-slate-700">{t('logPath')}</div>
+              <div className="text-slate-400 text-sm">{t('logPathDesc')}</div>
+            </div>
+            <div className="flex-1 max-w-md">
+              <input
+                type="text"
+                value={appSettings.logPath}
+                onChange={(e) => setAppSettings({ ...appSettings, logPath: e.target.value })}
+                onBlur={() => saveAppSettings({ logPath: appSettings.logPath })}
+                onKeyDown={(e) => e.key === 'Enter' && saveAppSettings({ logPath: appSettings.logPath })}
+                placeholder={t('placeholderLogPath')}
+                className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              />
+            </div>
           </div>
         </div>
       </div>
