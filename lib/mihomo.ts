@@ -23,6 +23,8 @@ export const generateFullConfig = () => {
     secret: settings?.secret || initial.secret,
     "mixed-port": settings?.mixed_port || initial.mixed_port,
     "external-controller": settings?.controller_port || initial.controller_port,
+    "allow-lan": true,
+    "bind-address": "*",
     "geodata-mode": true,
     "geox-url": {
       geoip: "https://fastly.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat",

@@ -5,6 +5,7 @@ import { loadEffectivePorts } from './lib/store';
 const withNextIntl = createNextIntlPlugin();
 
 const config: NextConfig = {
+  output: 'standalone',
   async rewrites() {
     // 1. 初始化端口配置（优先级：环境变量 > settings.json > initial.json）
     const ports = loadEffectivePorts();

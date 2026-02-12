@@ -12,6 +12,11 @@ const APP_NAME = 'MihomoNext';
  * Linux: ~/.config/mihomonext
  */
 export const getAppDataDir = () => {
+  // 优先使用环境变量指定的目录
+  if (process.env.MIHOMONEXT_DATA_DIR) {
+    return path.resolve(process.env.MIHOMONEXT_DATA_DIR);
+  }
+
   // 开发环境下使用项目根目录下的 .userdata
   if (process.env.NODE_ENV === 'development') {
     return path.join(process.cwd(), '.userdata');

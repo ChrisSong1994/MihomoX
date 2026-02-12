@@ -1,0 +1,16 @@
+services:
+  mihomo-next:
+    build: .
+    container_name: mihomo-next
+    restart: always
+    ports:
+      - "3000:3000"     # Web UI
+      - "7890:7890"     # Proxy Port (Mixed)
+    volumes:
+      - ./userdata:/app/.userdata
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MIHOMONEXT_DATA_DIR=/app/.userdata
+      # 如果需要自定义密钥，可以在这里设置
+      # - MIHOMO_SECRET=your_secret
