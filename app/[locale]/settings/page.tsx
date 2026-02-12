@@ -158,14 +158,16 @@ export default function SettingsPage() {
                     className="w-20 px-2 py-1 bg-white border border-indigo-300 rounded text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                     autoFocus
                     onBlur={() => {
-                      if (portValue && portValue !== (config?.['mixed-port']).toString()) {
+                      const currentPort = (config?.['mixed-port'] || config?.port || '').toString();
+                      if (portValue && portValue !== currentPort) {
                         updateConfig('mixed-port', portValue);
                       }
                       setEditingPort(null);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
-                        if (portValue && portValue !== (config?.['mixed-port']).toString()) {
+                        const currentPort = (config?.['mixed-port'] || config?.port || '').toString();
+                        if (portValue && portValue !== currentPort) {
                           updateConfig('mixed-port', portValue);
                         }
                         setEditingPort(null);
@@ -178,10 +180,10 @@ export default function SettingsPage() {
                   className="text-sm font-mono text-slate-600 cursor-pointer hover:text-indigo-600 flex items-center gap-2"
                   onClick={() => {
                     setEditingPort('mixed-port');
-                    setPortValue((config?.['mixed-port'] || '').toString());
+                    setPortValue((config?.['mixed-port'] || config?.port || '').toString());
                   }}
                 >
-                  {config?.['mixed-port'] || '--'}
+                  {config?.['mixed-port'] || config?.port || '--'}
                   <svg className="w-3 h-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>

@@ -1,14 +1,34 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
   const t = useTranslations('Dashboard');
   const [stats, setStats] = useState<any>(null);
   const [status, setStatus] = useState<any>(null);
   const [ipInfo, setIpInfo] = useState<any>(null);
+  const [history, setHistory] = useState<any[]>([]);
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B/s';
+    const k = 1024;
+    const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const chartData = useMemo(() => {
+    return history.map(item => ({
+      time: new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      up: item.up,
+      down: item.down,
+      upRaw: item.up,
+      downRaw: item.down
+    }));
+  }, [history]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -18,12 +38,17 @@ export default function Dashboard() {
         const statsData = await statsRes.json();
         setStats(statsData);
 
+        // Fetch history
+        const historyRes = await fetch('/api/stats?type=history');
+        const historyData = await historyRes.json();
+        setHistory(historyData);
+
         // Fetch kernel status
         const statusRes = await fetch('/api/kernel');
         const statusData = await statusRes.json();
         setStatus(statusData);
 
-        // Mock IP info (can be replaced with real API or kernel interface)
+        // Mock IP info
         setIpInfo({
           ip: '127.0.0.1',
           location: 'Local Network',
@@ -91,33 +116,91 @@ export default function Dashboard() {
 
       {/* Detail Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Active Subscription Panel */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        {/* Traffic Chart Panel */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <h3 className="font-bold text-slate-800">{t('activeSub')}</h3>
-            <Link href="/subscriptions" className="text-indigo-600 text-sm font-medium hover:underline">
-              {t('manageSub')}
-            </Link>
-          </div>
-          <div className="p-6">
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v4M7 7h10" />
-                </svg>
+            <h3 className="font-bold text-slate-800">{t('trafficHistory')}</h3>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-indigo-500 rounded-full" />
+                <span className="text-xs text-slate-500 font-medium">Upload</span>
               </div>
-              <div className="flex-1">
-                <div className="text-lg font-bold text-slate-800 mb-1">{t('defaultSub')}</div>
-                <div className="text-slate-500 text-sm flex items-center gap-4">
-                  <span>{t('nodeCount')}: 42</span>
-                  <span>•</span>
-                  <span>{t('lastUpdate')}: {t('minutesAgo', { minutes: 10 })}</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-violet-500 rounded-full" />
+                <span className="text-xs text-slate-500 font-medium">Download</span>
               </div>
-              <button className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors">
-                {t('updateNow')}
-              </button>
             </div>
+          </div>
+          <div className="p-6 h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorUp" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorDown" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="time" 
+                  hide={true}
+                />
+                <YAxis 
+                  tickFormatter={(value) => formatBytes(value).split(' ')[0]} 
+                  tick={{ fontSize: 10, fill: '#94a3b8' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-white p-3 border border-slate-100 shadow-xl rounded-xl">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">{payload[0].payload.time}</p>
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-xs text-slate-600 flex items-center gap-2">
+                                <div className="w-2 h-2 bg-indigo-500 rounded-full" /> Upload
+                              </span>
+                              <span className="text-xs font-mono font-bold text-slate-800">{formatBytes(payload[0].value as number)}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-xs text-slate-600 flex items-center gap-2">
+                                <div className="w-2 h-2 bg-violet-500 rounded-full" /> Download
+                              </span>
+                              <span className="text-xs font-mono font-bold text-slate-800">{formatBytes(payload[1].value as number)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="up" 
+                  stroke="#6366f1" 
+                  strokeWidth={2}
+                  fillOpacity={1} 
+                  fill="url(#colorUp)" 
+                  isAnimationActive={false}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="down" 
+                  stroke="#8b5cf6" 
+                  strokeWidth={2}
+                  fillOpacity={1} 
+                  fill="url(#colorDown)" 
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 

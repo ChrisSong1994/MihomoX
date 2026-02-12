@@ -32,9 +32,127 @@ export const updateConfigFile = (updates: Record<string, any>) => {
  */
 
 let mihomoProcess: ChildProcess | null = null;
+let trafficInterval: NodeJS.Timeout | null = null;
+const PID_FILE = path.join(process.cwd(), 'config', 'mihomo.pid');
+
+/**
+ * Check if a process is actually running by PID
+ */
+const isProcessRunning = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+/**
+ * Save PID to local file
+ */
+const savePid = (pid: number) => {
+  try {
+    fs.writeFileSync(PID_FILE, pid.toString(), 'utf8');
+  } catch (e) {
+    console.error('[Mihomo] Failed to save PID file:', e);
+  }
+};
+
+/**
+ * Remove PID file
+ */
+const clearPid = () => {
+  try {
+    if (fs.existsSync(PID_FILE)) {
+      fs.unlinkSync(PID_FILE);
+    }
+  } catch (e) {
+    // Ignore error if file doesn't exist
+  }
+};
+
+/**
+ * Get PID from file
+ */
+const getSavedPid = (): number | null => {
+  try {
+    if (fs.existsSync(PID_FILE)) {
+      const pidStr = fs.readFileSync(PID_FILE, 'utf8').trim();
+      return parseInt(pidStr, 10);
+    }
+  } catch (e) {
+    console.error('[Mihomo] Failed to read PID file:', e);
+  }
+  return null;
+};
 // Store recent logs for frontend debug view
 let kernelLogs: string[] = [];
 const MAX_LOG_LINES = 1000;
+
+// Store traffic history (last 1 hour, every 2 seconds = 1800 points)
+let trafficHistory: Array<{ time: number; up: number; down: number }> = [];
+const MAX_TRAFFIC_POINTS = 1800;
+
+/**
+ * Update traffic history
+ */
+const updateTrafficHistory = (up: number, down: number) => {
+  const now = Date.now();
+  trafficHistory.push({ time: now, up, down });
+  if (trafficHistory.length > MAX_TRAFFIC_POINTS) {
+    trafficHistory.shift();
+  }
+};
+
+/**
+ * Get traffic history
+ */
+export const getTrafficHistory = () => {
+  return trafficHistory;
+};
+
+/**
+ * Start Traffic Monitor
+ */
+const startTrafficMonitor = () => {
+  if (trafficInterval) return;
+  
+  trafficInterval = setInterval(async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:9099/traffic');
+      const reader = res.body?.getReader();
+      if (!reader) return;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const text = new TextDecoder().decode(value);
+        const lines = text.split('\n');
+        
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const data = JSON.parse(line);
+            updateTrafficHistory(data.up, data.down);
+          } catch (e) {
+            // Skip invalid JSON
+          }
+        }
+      }
+    } catch (e) {
+      // Kernel might be stopped
+      if (trafficInterval) {
+        clearInterval(trafficInterval);
+        trafficInterval = null;
+      }
+      // Retry after 5s if still running
+      setTimeout(() => {
+        if (getKernelStatus()) startTrafficMonitor();
+      }, 5000);
+    }
+  }, 2000);
+};
 
 /**
  * Get matching binary name based on current platform
@@ -109,6 +227,15 @@ const runKernel = (bin: string, configDir: string) => {
     stdio: ['ignore', 'pipe', 'pipe'] // Capture stdout and stderr
   });
 
+  if (mihomoProcess.pid) {
+    savePid(mihomoProcess.pid);
+    startTrafficMonitor();
+    // If detached, we need to unref so the parent can exit independently
+    if (process.platform !== 'win32') {
+      mihomoProcess.unref();
+    }
+  }
+
   // Handle stdout logs
   mihomoProcess.stdout?.on('data', (data) => {
     const line = data.toString().trim();
@@ -129,6 +256,7 @@ const runKernel = (bin: string, configDir: string) => {
     console.log(`[Mihomo] Kernel process exited with code: ${code}`);
     addLog(`[SYSTEM] Kernel process exited with code: ${code}`);
     mihomoProcess = null;
+    clearPid();
   });
 
   mihomoProcess.on('error', (err) => {
@@ -155,27 +283,36 @@ const addLog = (msg: string) => {
  * Different strategies for Windows and Unix platforms
  */
 export const stopKernel = () => {
-  if (mihomoProcess) {
+  const currentPid = mihomoProcess?.pid || getSavedPid();
+  
+  if (currentPid) {
     if (process.platform === 'win32') {
       try {
         // Use taskkill on Windows to end process tree
-        execSync(`taskkill /pid ${mihomoProcess.pid} /f /t`);
+        execSync(`taskkill /pid ${currentPid} /f /t`);
       } catch (e) {
-        mihomoProcess.kill();
+        if (mihomoProcess) mihomoProcess.kill();
       }
     } else {
-      if (mihomoProcess.pid) {
-        try {
-          // Use negative PID to kill process group on Unix
-          process.kill(-mihomoProcess.pid);
-        } catch (e) {
-          mihomoProcess.kill();
-        }
-      } else {
-        mihomoProcess.kill();
+      try {
+        // Try to kill the specific process or process group
+        process.kill(currentPid, 'SIGTERM');
+        // Wait a bit and check if still running, then force kill
+        setTimeout(() => {
+          if (isProcessRunning(currentPid)) {
+            process.kill(currentPid, 'SIGKILL');
+          }
+        }, 1000);
+      } catch (e) {
+        if (mihomoProcess) mihomoProcess.kill();
       }
     }
     mihomoProcess = null;
+    clearPid();
+    if (trafficInterval) {
+      clearInterval(trafficInterval);
+      trafficInterval = null;
+    }
     addLog(`[SYSTEM] Kernel stopped by user`);
   }
 };
@@ -184,7 +321,20 @@ export const stopKernel = () => {
  * Get kernel running status
  */
 export const getKernelStatus = () => {
-  return mihomoProcess !== null;
+  // 1. Check in-memory process first
+  if (mihomoProcess) {
+    if (!trafficInterval) startTrafficMonitor();
+    return true;
+  }
+
+  // 2. Check saved PID if process restarted
+  const savedPid = getSavedPid();
+  if (savedPid && isProcessRunning(savedPid)) {
+    if (!trafficInterval) startTrafficMonitor();
+    return true;
+  }
+
+  return false;
 };
 
 /**

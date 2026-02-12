@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 export default function ProxiesPage() {
   const t = useTranslations('Proxies');
@@ -9,11 +10,22 @@ export default function ProxiesPage() {
   const [groups, setGroups] = useState<any[]>([]);
   const [activeGroup, setActiveGroup] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [kernelRunning, setKernelRunning] = useState(true);
   const [testing, setTesting] = useState<Record<string, boolean>>({});
   const [latencies, setLatencies] = useState<Record<string, number>>({});
 
   const fetchProxies = async () => {
     try {
+      // First check kernel status
+      const kernelRes = await fetch('/api/kernel');
+      const kernelData = await kernelRes.json();
+      setKernelRunning(kernelData.running);
+
+      if (!kernelData.running) {
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch('/mihomo-api/proxies'); // API path with prefix
       const data = await res.json();
       
@@ -29,6 +41,7 @@ export default function ProxiesPage() {
       setLoading(false);
     } catch (e) {
       console.error('Fetch proxies error:', e);
+      setLoading(false);
     }
   };
 
@@ -73,6 +86,28 @@ export default function ProxiesPage() {
   };
 
   const currentGroup = groups.find(g => g.name === activeGroup);
+
+  if (!kernelRunning && !loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 animate-in fade-in duration-500">
+        <div className="w-24 h-24 bg-rose-50 rounded-full flex items-center justify-center">
+          <svg className="w-12 h-12 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-slate-800">{t('kernelNotRunning')}</h2>
+          <p className="text-slate-500 max-w-md mx-auto">{t('kernelNotRunningDesc')}</p>
+        </div>
+        <Link 
+          href="/settings"
+          className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+        >
+          {t('goToSettings')}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

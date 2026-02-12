@@ -1,6 +1,14 @@
 import osUtils from 'os-utils';
+import { getTrafficHistory } from '@/lib/mihomo';
 
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const type = searchParams.get('type');
+
+  if (type === 'history') {
+    return Response.json(getTrafficHistory());
+  }
+
   const cpuUsage = await new Promise<number>((resolve) => {
     osUtils.cpuUsage((v) => resolve(v));
   });

@@ -39,62 +39,87 @@ export async function POST(req: Request) {
       }
 
       console.log(`[Subscribe] Fetching subscription: ${targetUrl}`);
-      const res = await fetch(targetUrl);
-      if (!res.ok) {
-        throw new Error(`Failed to fetch subscription: ${res.statusText}`);
-      }
-      const rawConfig = await res.text();
       
-      // Step 1: Parse config content
-      let parsed: any;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       try {
-        parsed = yaml.load(rawConfig);
-      } catch (e) {
-        console.log('[Subscribe] YAML parse failed, trying Base64...');
-        try {
-          const decoded = Buffer.from(rawConfig, 'base64').toString();
-          parsed = yaml.load(decoded);
-        } catch (e2) {
-          throw new Error('Content is neither valid YAML nor Base64 encoded');
+        const res = await fetch(targetUrl, {
+          headers: {
+            'User-Agent': 'clash-verge/v1.3.8',
+            'Accept': '*/*',
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch subscription: ${res.status} ${res.statusText}`);
         }
-      }
+        const rawConfig = await res.text();
+        
+        // Step 1: Parse config content
+        let parsed: any;
+        try {
+          parsed = yaml.load(rawConfig);
+        } catch (e) {
+          console.log('[Subscribe] YAML parse failed, trying Base64...');
+          try {
+            const decoded = Buffer.from(rawConfig, 'base64').toString();
+            parsed = yaml.load(decoded);
+          } catch (e2) {
+            throw new Error('Content is neither valid YAML nor Base64 encoded');
+          }
+        }
 
-      if (typeof parsed !== 'object' || parsed === null) {
-        throw new Error('Invalid config format: result is not an object');
-      }
+        if (typeof parsed !== 'object' || parsed === null) {
+          throw new Error('Invalid config format: result is not an object');
+        }
 
-      // Step 2: Inject custom settings
-      parsed['external-controller'] = '127.0.0.1:9099';
-      parsed['secret'] = process.env.MIHOMO_SECRET || '';
-      
-      parsed['tun'] = {
-        enable: true,
-        stack: 'system',
-        'auto-route': true,
-        'auto-detect-interface': true,
-        'dns-hijack': ['any:53']
-      };
-      
-      if (!parsed['dns']) {
-        parsed['dns'] = {};
-      }
-      parsed['dns']['enable'] = true;
-      parsed['dns']['ipv6'] = false;
-      parsed['dns']['enhanced-mode'] = 'fake-ip';
-      parsed['dns']['nameserver'] = ['223.5.5.5', '119.29.29.29'];
+        // Step 2: Inject custom settings
+        parsed['external-controller'] = '127.0.0.1:9099';
+        parsed['secret'] = process.env.MIHOMO_SECRET || '';
+        
+        parsed['tun'] = {
+          enable: true,
+          stack: 'system',
+          'auto-route': true,
+          'auto-detect-interface': true,
+          'dns-hijack': ['any:53']
+        };
+        
+        if (!parsed['dns']) {
+          parsed['dns'] = {};
+        }
+        parsed['dns']['enable'] = true;
+        parsed['dns']['ipv6'] = false;
+        parsed['dns']['enhanced-mode'] = 'fake-ip';
+        parsed['dns']['nameserver'] = ['223.5.5.5', '119.29.29.29'];
 
-      // Step 3: Save to config.yaml
-      const configPath = path.join(process.cwd(), 'config/config.yaml');
-      const configDir = path.dirname(configPath);
-      
-      if (!fs.existsSync(configDir)) {
-        fs.mkdirSync(configDir, { recursive: true });
-      }
+        // Step 3: Save to config.yaml
+        const configPath = path.join(process.cwd(), 'config/config.yaml');
+        const configDir = path.dirname(configPath);
+        
+        if (!fs.existsSync(configDir)) {
+          fs.mkdirSync(configDir, { recursive: true });
+        }
 
-      fs.writeFileSync(configPath, yaml.dump(parsed));
-      
-      console.log('[Subscribe] Subscription applied and saved locally');
-      return NextResponse.json({ success: true, message: 'Subscription applied successfully' });
+        fs.writeFileSync(configPath, yaml.dump(parsed));
+        
+        console.log('[Subscribe] Subscription applied and saved locally');
+        return NextResponse.json({ success: true, message: 'Subscription applied successfully' });
+      } catch (err: any) {
+        clearTimeout(timeoutId);
+        console.error('[Subscribe] Fetch error:', err);
+        if (err.name === 'AbortError') {
+          throw new Error('Fetch timeout: server took too long to respond');
+        }
+        if (err.cause?.code === 'ECONNRESET' || err.code === 'ECONNRESET') {
+          throw new Error('Connection reset by provider. This often happens if the URL is blocked. Please check your network or try using a proxy.');
+        }
+        throw err;
+      }
     }
 
     return NextResponse.json({ success: false, error: 'Invalid request' }, { status: 400 });
