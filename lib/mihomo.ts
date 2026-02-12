@@ -1,8 +1,27 @@
 import { spawn, ChildProcess, execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import yaml from 'js-yaml';
 import { getSettings } from './store';
+
+/**
+ * 获取系统默认日志路径
+ */
+export const getDefaultLogPath = () => {
+  const homeDir = os.homedir();
+  const appName = 'MihomoNext';
+  
+  switch (process.platform) {
+    case 'darwin':
+      return path.join(homeDir, 'Library', 'Logs', appName);
+    case 'win32':
+      return path.join(process.env.LOCALAPPDATA || path.join(homeDir, 'AppData', 'Local'), appName, 'Logs');
+    default:
+      // Linux 及其他
+      return path.join(homeDir, '.cache', appName.toLowerCase(), 'logs');
+  }
+};
 
 /**
  * 更新并持久化写入 config.yaml 配置
@@ -34,6 +53,7 @@ export const updateConfigFile = (updates: Record<string, any>) => {
 
 let mihomoProcess: ChildProcess | null = null;
 let trafficInterval: NodeJS.Timeout | null = null;
+let logsAbortController: AbortController | null = null;
 const PID_FILE = path.join(process.cwd(), 'config', 'mihomo.pid');
 
 /**
@@ -110,6 +130,55 @@ const updateTrafficHistory = (up: number, down: number) => {
  */
 export const getTrafficHistory = () => {
   return trafficHistory;
+};
+
+/**
+ * 启动日志监控（获取详细的代理请求日志）
+ */
+const startLogsMonitor = async () => {
+  if (logsAbortController) return;
+  
+  console.log('[Mihomo] Starting logs monitor...');
+  logsAbortController = new AbortController();
+  
+  const runMonitor = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:9099/logs', {
+        signal: logsAbortController?.signal
+      });
+      
+      const reader = res.body?.getReader();
+      if (!reader) return;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const text = new TextDecoder().decode(value);
+        const chunks = text.split('\n');
+        
+        for (const chunk of chunks) {
+          if (!chunk.trim()) continue;
+          try {
+            const data = JSON.parse(chunk);
+            // 记录代理请求日志
+            addLog(`[${data.type.toUpperCase()}] ${data.payload}`);
+          } catch (e) {
+            // 跳过无效 JSON
+          }
+        }
+      }
+    } catch (e: any) {
+      if (e.name === 'AbortError') return;
+      console.error('[Mihomo] Logs monitor error:', e.message);
+      // 5 秒后重试
+      setTimeout(() => {
+        if (getKernelStatus() && logsAbortController) runMonitor();
+      }, 5000);
+    }
+  };
+
+  runMonitor();
 };
 
 /**
@@ -249,6 +318,8 @@ const runKernel = (bin: string, configDir: string) => {
   if (mihomoProcess.pid) {
     savePid(mihomoProcess.pid);
     startTrafficMonitor();
+    startLogsMonitor();
+    addLog(`[SYSTEM] Kernel started with PID: ${mihomoProcess.pid}`);
     // 若为分离进程，需要取消引用以便父进程独立退出
     if (process.platform !== 'win32') {
       mihomoProcess.unref();
@@ -257,18 +328,24 @@ const runKernel = (bin: string, configDir: string) => {
 
   // 处理标准输出日志
   mihomoProcess.stdout?.on('data', (data) => {
-    const line = data.toString().trim();
-    if (line) {
-      addLog(`[STDOUT] ${line}`);
-    }
+    const lines = data.toString().split('\n');
+    lines.forEach((line: string) => {
+      const trimmed = line.trim();
+      if (trimmed) {
+        addLog(`[STDOUT] ${trimmed}`);
+      }
+    });
   });
 
   // 处理标准错误日志
   mihomoProcess.stderr?.on('data', (data) => {
-    const line = data.toString().trim();
-    if (line) {
-      addLog(`[STDERR] ${line}`);
-    }
+    const lines = data.toString().split('\n');
+    lines.forEach((line: string) => {
+      const trimmed = line.trim();
+      if (trimmed) {
+        addLog(`[STDERR] ${trimmed}`);
+      }
+    });
   });
 
   mihomoProcess.on('close', (code) => {
@@ -303,7 +380,7 @@ const addLog = (msg: string) => {
   // 持久化
   try {
     const settings = getSettings();
-    const logDir = settings.logPath || path.join(process.cwd(), 'logs');
+    const logDir = settings.logPath || getDefaultLogPath();
     
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir, { recursive: true });
@@ -353,6 +430,10 @@ export const stopKernel = () => {
       }
       trafficInterval = null;
     }
+    if (logsAbortController) {
+      logsAbortController.abort();
+      logsAbortController = null;
+    }
     addLog(`[SYSTEM] Kernel stopped by user`);
   }
 };
@@ -371,6 +452,7 @@ export const getKernelStatus = () => {
   const savedPid = getSavedPid();
   if (savedPid && isProcessRunning(savedPid)) {
     if (!trafficInterval) startTrafficMonitor();
+    if (!logsAbortController) startLogsMonitor();
     return true;
   }
 

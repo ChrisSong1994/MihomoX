@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getSettings, saveSettings } from '@/lib/store';
+import { getDefaultLogPath } from '@/lib/mihomo';
 
 export async function GET() {
-  return NextResponse.json(getSettings());
+  const settings = getSettings();
+  return NextResponse.json({
+    ...settings,
+    defaultLogPath: getDefaultLogPath()
+  });
 }
 
 export async function POST(req: Request) {

@@ -207,7 +207,7 @@ export async function POST(req: Request) {
   }
 }
 
-// PATCH：更新订阅状态（启用/禁用切换）
+// PATCH：更新订阅信息
 export async function PATCH(req: Request) {
   try {
     const { id, ...updates } = await req.json();
@@ -217,8 +217,8 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ success: false, error: 'Subscription not found' }, { status: 404 });
     }
     
-    // 切换启用状态时，直接更新存储即可
-    updateSubscription(id, { ...updates, enabled: updates.enabled !== undefined ? updates.enabled : !sub.enabled });
+    // 更新订阅信息
+    updateSubscription(id, { ...updates });
     return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e.message }, { status: 400 });
