@@ -1,0 +1,8 @@
+{
+  "mixed_port": 7890,
+  "allow_lan": true,
+  "log_level": "info",
+  "web_port": 9090,
+  "external-controller": "127.0.0.1:9099",
+  "secret": ""
+}

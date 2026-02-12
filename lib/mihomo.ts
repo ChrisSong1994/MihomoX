@@ -3,10 +3,126 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import yaml from 'js-yaml';
-import { getSettings } from './store';
+import { getSettings, getInitialConfig, getSubscriptions } from './store';
 import { getPaths, ensureDirectories } from './paths';
 
 const paths = getPaths();
+
+/**
+ * 核心配置生成逻辑：合并订阅内容与系统设置
+ */
+export const generateFullConfig = () => {
+  const subs = getSubscriptions().filter(s => s.enabled);
+  const settings = getSettings();
+  const initial = getInitialConfig();
+
+  // 基础结构
+  const mergedConfig: any = {
+    proxies: [],
+    'proxy-groups': [],
+    rules: [],
+    ...initial // 以 initial.json 作为底色
+  };
+
+  // 1. 合并订阅内容
+  subs.forEach(sub => {
+    const filePath = path.join(paths.subscriptionsDir, `${sub.id}.yaml`);
+    if (fs.existsSync(filePath)) {
+      try {
+        const raw = fs.readFileSync(filePath, 'utf8');
+        let parsed: any;
+        try {
+          parsed = yaml.load(raw);
+        } catch (e) {
+          const decoded = Buffer.from(raw, 'base64').toString();
+          parsed = yaml.load(decoded);
+        }
+
+        if (parsed && typeof parsed === 'object') {
+          // 合并 proxies
+          if (Array.isArray(parsed.proxies)) {
+            parsed.proxies.forEach((p: any) => {
+              if (!mergedConfig.proxies.find((existing: any) => existing.name === p.name)) {
+                mergedConfig.proxies.push(p);
+              }
+            });
+          }
+
+          // 合并 proxy-groups
+          if (Array.isArray(parsed['proxy-groups'])) {
+            parsed['proxy-groups'].forEach((g: any) => {
+              const existingGroup = mergedConfig['proxy-groups'].find((eg: any) => eg.name === g.name);
+              if (existingGroup) {
+                if (Array.isArray(g.proxies)) {
+                  g.proxies.forEach((pm: any) => {
+                    if (!existingGroup.proxies.includes(pm)) {
+                      existingGroup.proxies.push(pm);
+                    }
+                  });
+                }
+              } else {
+                mergedConfig['proxy-groups'].push(g);
+              }
+            });
+          }
+
+          // 合并 rules
+          if (Array.isArray(parsed.rules)) {
+            mergedConfig.rules = [...mergedConfig.rules, ...parsed.rules];
+          }
+        }
+      } catch (err) {
+        console.error(`[Mihomo] Failed to merge subscription ${sub.name}:`, err);
+      }
+    }
+  });
+
+  // 2. 注入系统配置（优先级最高）
+  const mixedPort = settings.mixed_port || initial.mixed_port || 7890;
+  const controllerPort = settings.controller_port || 9099;
+
+  mergedConfig['mixed-port'] = mixedPort;
+  mergedConfig['external-controller'] = `127.0.0.1:${controllerPort}`;
+  mergedConfig['secret'] = process.env.MIHOMO_SECRET || initial.secret || '';
+  
+  // TUN 配置
+  mergedConfig['tun'] = {
+    enable: true,
+    stack: 'system',
+    'auto-route': true,
+    'auto-detect-interface': true,
+    'dns-hijack': ['any:53'],
+    ...(mergedConfig['tun'] || {})
+  };
+  
+  // DNS 配置
+  if (!mergedConfig['dns']) mergedConfig['dns'] = {};
+  mergedConfig['dns'] = {
+    enable: true,
+    ipv6: false,
+    'enhanced-mode': 'fake-ip',
+    'nameserver': ['223.5.5.5', '119.29.29.29'],
+    ...mergedConfig['dns']
+  };
+
+  // 3. 写入文件
+  const configPath = paths.mihomoConfig;
+  fs.writeFileSync(configPath, yaml.dump(mergedConfig), 'utf8');
+  console.log(`[Mihomo] Full config.yaml generated with ${subs.length} subscriptions`);
+  
+  return mergedConfig;
+};
+
+/**
+ * 确保 config.yaml 存在，如果不存在则生成
+ */
+const ensureMihomoConfig = () => {
+  const configPath = paths.mihomoConfig;
+  if (!fs.existsSync(configPath)) {
+    console.log(`[Mihomo] Config file not found at ${configPath}, generating...`);
+    generateFullConfig();
+  }
+};
 
 /**
  * 获取系统默认日志路径
@@ -135,7 +251,9 @@ const startLogsMonitor = async () => {
   
   const runMonitor = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:9099/logs', {
+      const settings = getSettings();
+      const controllerPort = settings.controller_port || 9099;
+      const res = await fetch(`http://127.0.0.1:${controllerPort}/logs`, {
         signal: logsAbortController?.signal
       });
       
@@ -185,7 +303,9 @@ const startTrafficMonitor = async () => {
   
   const runMonitor = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:9099/traffic', {
+      const settings = getSettings();
+      const controllerPort = settings.controller_port || 9099;
+      const res = await fetch(`http://127.0.0.1:${controllerPort}/traffic`, {
         signal: controller.signal
       });
       
@@ -263,6 +383,9 @@ export const startKernel = () => {
   // 确保配置目录存在
   ensureDirectories();
 
+  // 确保 config.yaml 存在
+  ensureMihomoConfig();
+
   // 检查二进制文件是否存在
   if (!fs.existsSync(bin)) {
     console.error(`[Mihomo] Binary not found: ${bin}`);
@@ -299,10 +422,22 @@ const runKernel = (bin: string, configDir: string) => {
   // 清空历史日志
   kernelLogs = [];
 
-  // 使用 spawn 启动进程
-  mihomoProcess = spawn(bin, ['-d', configDir], {
-    detached: process.platform !== 'win32',
-    stdio: ['ignore', 'pipe', 'pipe'] // 捕获标准输出与标准错误
+  // 获取动态端口配置
+  const settings = getSettings();
+  const mixedPort = settings.mixed_port || 7890;
+  const controllerPort = settings.controller_port || 9099;
+
+  // 准备启动参数，强制覆盖端口
+  const args = [
+    '-d', configDir,
+    '--mixed-port', mixedPort.toString(),
+    '--external-controller', `127.0.0.1:${controllerPort}`
+  ];
+
+  mihomoProcess = spawn(bin, args, {
+    cwd: process.cwd(),
+    detached: false,
+    stdio: 'pipe'
   });
 
   if (mihomoProcess.pid) {

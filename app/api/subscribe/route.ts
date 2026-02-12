@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { NextResponse } from 'next/server';
 import { getSubscriptions, addSubscription, deleteSubscription, updateSubscription } from '@/lib/store';
-import { addLog } from '@/lib/mihomo';
+import { addLog, generateFullConfig } from '@/lib/mihomo';
 import { getPaths } from '@/lib/paths';
 
 const paths = getPaths();
@@ -193,36 +193,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: 'No valid proxies found in subscriptions' }, { status: 400 });
       }
 
-      // 步骤 2：注入自定义配置项
-      const finalConfig = { ...mergedConfig };
-      finalConfig['external-controller'] = '127.0.0.1:9099';
-      finalConfig['secret'] = process.env.MIHOMO_SECRET || '';
-      
-      finalConfig['tun'] = {
-        enable: true,
-        stack: 'system',
-        'auto-route': true,
-        'auto-detect-interface': true,
-        'dns-hijack': ['any:53']
-      };
-      
-      if (!finalConfig['dns']) {
-        finalConfig['dns'] = {};
-      }
-      finalConfig['dns']['enable'] = true;
-      finalConfig['dns']['ipv6'] = false;
-      finalConfig['dns']['enhanced-mode'] = 'fake-ip';
-      finalConfig['dns']['nameserver'] = ['223.5.5.5', '119.29.29.29'];
-
-      // 步骤 3：写入到 config.yaml
-      const configPath = paths.mihomoConfig;
-      const configDir = path.dirname(configPath);
-      
-      if (!fs.existsSync(configDir)) {
-        fs.mkdirSync(configDir, { recursive: true });
-      }
-
-      fs.writeFileSync(configPath, yaml.dump(finalConfig));
+      // 步骤 2：生成并保存完整配置
+      generateFullConfig();
       
       console.log(`[Subscribe] ${urlsToFetch.length} subscriptions merged and saved`);
       return NextResponse.json({ 
@@ -251,6 +223,12 @@ export async function PATCH(req: Request) {
     // 更新订阅信息
     updateSubscription(id, { ...updates });
     addLog(`[SUBSCRIPTION] Updated subscription: ${sub.name}`);
+
+    // 如果启用了/禁用了订阅，重新生成完整配置
+    if (updates.enabled !== undefined) {
+      generateFullConfig();
+    }
+
     return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e.message }, { status: 400 });

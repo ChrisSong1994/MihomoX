@@ -26,7 +26,10 @@ export async function GET() {
   // 2. 如果内核运行，尝试从内核获取当前配置
   if (isRunning) {
     try {
-      const res = await fetch('http://127.0.0.1:9099/configs');
+      const { getSettings } = require('@/lib/store');
+      const settings = getSettings();
+      const controllerPort = settings.controller_port || 9099;
+      const res = await fetch(`http://127.0.0.1:${controllerPort}/configs`);
       if (res.ok) {
         kernelConfig = await res.json();
       }
