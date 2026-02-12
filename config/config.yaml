@@ -1,10 +1,5 @@
-mixed-port: 7890
-allow-lan: true
-mode: rule
-log-level: info
-external-controller: 127.0.0.1:9099
 proxies:
-  - name: 有效期2026/02/23,剩余:67.81GB
+  - name: 有效期2026/02/23,剩余:67.72GB
     type: trojan
     server: iplc-hk-1.tr202505.com
     port: 7001
@@ -414,7 +409,7 @@ proxy-groups:
     type: select
     proxies:
       - Auto
-      - 有效期2026/02/23,剩余:67.81GB
+      - 有效期2026/02/23,剩余:67.72GB
       - 中国香港-IPLC-HK-1-流量倍率:1
       - 中国香港-IPLC-HK-2-流量倍率:1
       - 中国香港-IPLC-HK-3-流量倍率:1
@@ -464,7 +459,7 @@ proxy-groups:
     url: http://www.gstatic.com/generate_204
     interval: 300
     proxies:
-      - 有效期2026/02/23,剩余:67.81GB
+      - 有效期2026/02/23,剩余:67.72GB
       - 中国香港-IPLC-HK-1-流量倍率:1
       - 中国香港-IPLC-HK-2-流量倍率:1
       - 中国香港-IPLC-HK-3-流量倍率:1
@@ -989,6 +984,7 @@ rules:
   - IP-CIDR,100.64.0.0/10,DIRECT
   - GEOIP,CN,DIRECT
   - MATCH,Proxy
+external-controller: 127.0.0.1:9099
 secret: ''
 tun:
   enable: true

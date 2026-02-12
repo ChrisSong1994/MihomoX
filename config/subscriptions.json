@@ -4,7 +4,11 @@
     "url": "https://s1.trojanflare.one/clashx/01779812-6961-4bd5-8ff2-6722310ab0e6",
     "enabled": true,
     "id": "h0uiu9r",
-    "status": "idle"
+    "status": "idle",
+    "trafficUsed": 34659530674,
+    "trafficTotal": 107374182400,
+    "expireDate": "2026-02-22T16:00:00.000Z",
+    "lastUpdate": "2026-02-12T08:25:42.078Z"
   },
   {
     "name": "ssrdog",

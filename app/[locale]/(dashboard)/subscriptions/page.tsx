@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useToast } from '@/components/Toast';
 
 export default function SubscriptionsPage() {
   const t = useTranslations('Subscriptions');
+  const { showToast } = useToast();
   const [subs, setSubs] = useState<any[]>([]);
   const [newSub, setNewSub] = useState({ name: '', url: '' });
   const [isLoading, setIsLoading] = useState(false);
@@ -72,6 +74,20 @@ export default function SubscriptionsPage() {
     }
   };
 
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return t('never');
+    const date = new Date(dateStr);
+    return date.toLocaleString();
+  };
+
   const applySub = async (url?: string) => {
     setIsLoading(true);
     try {
@@ -84,12 +100,12 @@ export default function SubscriptionsPage() {
       if (data.success) {
         if (!url) {
           const enabledCount = subs.filter(s => s.enabled).length;
-          alert(t('mergeSuccess', { count: enabledCount }));
+          showToast(t('mergeSuccess', { count: enabledCount }), 'success');
         } else {
-          alert(t('update') + ' ' + (data.message || 'Success'));
+          showToast(t('update') + ' ' + (data.message || 'Success'), 'success');
         }
       } else {
-        alert('Error: ' + data.error);
+        showToast('Error: ' + data.error, 'error');
       }
     } catch (e) {
       console.error('Apply subscription error:', e);
@@ -167,7 +183,31 @@ export default function SubscriptionsPage() {
                       <span className="px-2 py-0.5 bg-slate-200 text-slate-500 rounded text-[10px] font-bold uppercase">{t('disabled')}</span>
                     )}
                   </div>
-                  <div className="text-slate-400 text-xs truncate font-mono">{sub.url}</div>
+                  <div className="text-slate-400 text-xs truncate font-mono mb-2">{sub.url}</div>
+                  
+                  {/* 流量和日期信息 */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                    {sub.trafficTotal > 0 && (
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <span className="text-slate-400">{t('traffic')}:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-indigo-600 font-bold">{formatBytes(sub.trafficUsed || 0)}</span>
+                          <span className="text-slate-300">/</span>
+                          <span className="text-slate-600">{formatBytes(sub.trafficTotal)}</span>
+                        </div>
+                      </div>
+                    )}
+                    {sub.expireDate && (
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <span className="text-slate-400">{t('expire')}:</span>
+                        <span className="text-slate-600">{new Date(sub.expireDate).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      <span className="text-slate-400">{t('lastUpdate')}:</span>
+                      <span className="text-slate-600">{formatDate(sub.lastUpdate)}</span>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex gap-2 ml-6">
                   <button 

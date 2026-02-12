@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/Toast';
 
 export default function SettingsPage() {
   const t = useTranslations('Settings');
+  const { showToast } = useToast();
   const [running, setRunning] = useState(false);
   const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
   const [editingPort, setEditingPort] = useState<string | null>(null);
   const [portValue, setPortValue] = useState<string>('');
   const [showConfig, setShowConfig] = useState(false);
@@ -47,12 +48,10 @@ export default function SettingsPage() {
         setConfigContent(data.content);
         setShowConfig(true);
       } else {
-        setMessage(data.error);
-        setTimeout(() => setMessage(''), 3000);
+        showToast(data.error, 'error');
       }
     } catch (e: any) {
-      setMessage(e.message);
-      setTimeout(() => setMessage(''), 3000);
+      showToast(e.message, 'error');
     }
   };
 
@@ -70,11 +69,10 @@ export default function SettingsPage() {
         body: JSON.stringify({ action }),
       });
       const data = await res.json();
-      setMessage(data.message || data.error);
       fetchStatus();
-      setTimeout(() => setMessage(''), 3000);
+      showToast(data.message || data.error, data.success !== false ? 'success' : 'error');
     } catch (e: any) {
-      setMessage(e.message);
+      showToast(e.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -90,11 +88,10 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.success) {
         setAppSettings(data.settings);
-        setMessage(t('updated'));
-        setTimeout(() => setMessage(''), 2000);
+        showToast(t('updated'), 'success');
       }
     } catch (e: any) {
-      setMessage(e.message);
+      showToast(e.message, 'error');
     }
   };
 
@@ -132,10 +129,9 @@ export default function SettingsPage() {
       });
 
       fetchStatus();
-      setMessage(`${t('updated')} ${key}`);
-      setTimeout(() => setMessage(''), 2000);
+      showToast(`${t('updated')} ${key}`, 'success');
     } catch (e: any) {
-      setMessage(e.message);
+      showToast(e.message, 'error');
     }
   };
 
@@ -224,12 +220,6 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
-
-        {message && (
-          <div className="mb-6 p-4 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 text-sm font-medium animate-in fade-in slide-in-from-top-2">
-            {message}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">

@@ -82,7 +82,12 @@
     "disable": "Disable",
     "applyEnabled": "Apply All Enabled",
     "applying": "Applying...",
-    "mergeSuccess": "Successfully merged and applied {count} subscriptions"
+    "mergeSuccess": "Successfully merged and applied {count} subscriptions",
+    "traffic": "Traffic",
+    "total": "Total",
+    "expire": "Expire",
+    "lastUpdate": "Last Update",
+    "never": "Never"
   },
   "Logs": {
     "title": "Logs",

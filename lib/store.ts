@@ -10,6 +10,9 @@ export interface Subscription {
   enabled: boolean;
   lastUpdate?: string;
   nodeCount?: number;
+  trafficUsed?: number;
+  trafficTotal?: number;
+  expireDate?: string;
   status: 'active' | 'expired' | 'error' | 'idle';
 }
 

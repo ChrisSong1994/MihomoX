@@ -82,7 +82,12 @@
     "disable": "禁用",
     "applyEnabled": "应用所有启用的订阅",
     "applying": "应用中...",
-    "mergeSuccess": "成功合并并应用了 {count} 个订阅"
+    "mergeSuccess": "成功合并并应用了 {count} 个订阅",
+    "traffic": "流量",
+    "total": "总量",
+    "expire": "到期",
+    "lastUpdate": "更新日期",
+    "never": "从未更新"
   },
   "Logs": {
     "title": "系统日志",

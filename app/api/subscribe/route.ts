@@ -71,6 +71,38 @@ export async function POST(req: Request) {
           clearTimeout(timeoutId);
 
           if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+          
+          // 解析流量信息 (Subscription Userinfo)
+          const userInfo = res.headers.get('subscription-userinfo');
+          if (userInfo) {
+            const info: any = {};
+            userInfo.split(';').forEach(item => {
+              const [key, val] = item.trim().split('=');
+              if (key && val) info[key] = parseInt(val);
+            });
+            
+            // 更新订阅对象的流量信息
+            const subs = getSubscriptions();
+            const sub = subs.find(s => s.url === fetchUrl);
+            if (sub) {
+              updateSubscription(sub.id, {
+                trafficUsed: (info.upload || 0) + (info.download || 0),
+                trafficTotal: info.total || 0,
+                expireDate: info.expire ? new Date(info.expire * 1000).toISOString() : undefined,
+                lastUpdate: new Date().toISOString()
+              });
+            }
+          } else {
+            // 如果没有流量信息，仅更新更新时间
+            const subs = getSubscriptions();
+            const sub = subs.find(s => s.url === fetchUrl);
+            if (sub) {
+              updateSubscription(sub.id, {
+                lastUpdate: new Date().toISOString()
+              });
+            }
+          }
+
           const rawConfig = await res.text();
           
           let parsed: any;
