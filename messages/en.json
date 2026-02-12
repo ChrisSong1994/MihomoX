@@ -1,0 +1,103 @@
+{
+  "Sidebar": {
+    "status": "Status",
+    "proxies": "Proxies",
+    "subscriptions": "Subscriptions",
+    "logs": "Logs",
+    "settings": "Settings"
+  },
+  "Header": {
+    "running": "Running",
+    "stopped": "Stopped",
+    "kernelStatus": "Kernel Status",
+    "switchLanguage": "Switch Language"
+  },
+  "Settings": {
+    "kernelManagement": "Kernel Management",
+    "kernelDesc": "Control the running state of Mihomo kernel",
+    "startKernel": "Start Kernel",
+    "stopKernel": "Stop Kernel",
+    "portSettings": "Port Settings",
+    "portDesc": "Modify proxy and controller ports",
+    "mixedPort": "Mixed Port",
+    "httpPort": "HTTP Port",
+    "socksPort": "SOCKS Port",
+    "controllerPort": "Controller Port",
+    "controllerAddress": "Controller Address",
+    "secret": "Secret",
+    "updated": "Updated and saved",
+    "status": "Current Status",
+    "running": "Running",
+    "stopped": "Stopped",
+    "serviceConfig": "Service Config",
+    "proxyMode": "Proxy Mode",
+    "proxyModeDesc": "Select Global, Rule, or Direct mode",
+    "allowLan": "Allow LAN",
+    "allowLanDesc": "Allow devices in the same LAN to connect",
+    "logLevel": "Log Level",
+    "logLevelDesc": "Control the detail level of kernel output logs",
+    "global": "Global",
+    "rule": "Rule",
+    "direct": "Direct",
+    "viewConfig": "View Config File",
+    "configContent": "Configuration Content",
+    "close": "Close"
+  },
+  "Proxies": {
+    "title": "Proxies",
+    "loading": "Loading...",
+    "selectNode": "Select Node",
+    "latencyTest": "Latency Test",
+    "testAll": "Test All",
+    "testing": "Testing...",
+    "latency": "Latency",
+    "kernelNotRunning": "Kernel Not Running",
+    "kernelNotRunningDesc": "Please start the kernel in system settings to get proxy nodes",
+    "goToSettings": "Go to Settings"
+  },
+  "Subscriptions": {
+    "title": "Subscriptions",
+    "add": "Add Subscription",
+    "url": "Subscription URL",
+    "name": "Name",
+    "actions": "Actions",
+    "delete": "Delete",
+    "update": "Update",
+    "addNew": "Add New Subscription",
+    "placeholderName": "Name (e.g., Provider A)",
+    "placeholderUrl": "Subscription URL",
+    "adding": "Adding...",
+    "saved": "Saved Subscriptions",
+    "noSubs": "No subscriptions yet, please add one above",
+    "confirmDelete": "Are you sure you want to delete this subscription?",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "enable": "Enable",
+    "disable": "Disable"
+  },
+  "Logs": {
+    "title": "Logs",
+    "clear": "Clear Logs"
+  },
+  "Dashboard": {
+    "upload": "Upload",
+    "download": "Download",
+    "memory": "Memory",
+    "mode": "Mode",
+    "activeSub": "Active Subscription",
+    "manageSub": "Manage Subscriptions",
+    "defaultSub": "Default Subscription",
+    "nodeCount": "Nodes",
+    "lastUpdate": "Last Update",
+    "updateNow": "Update Now",
+    "ipInfo": "Outbound IP Info",
+    "currentIp": "Current IP",
+    "location": "Location",
+    "isp": "ISP",
+    "minutesAgo": "{minutes}m ago"
+  },
+  "Common": {
+    "save": "Save",
+    "cancel": "Cancel"
+  }
+}
