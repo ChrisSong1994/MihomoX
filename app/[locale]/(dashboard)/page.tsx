@@ -89,10 +89,17 @@ export default function Dashboard() {
 
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
           <div className="text-slate-500 text-sm font-medium mb-2">{t('memory')}</div>
-          <div className="text-2xl font-bold text-slate-800">
-            {stats?.memory?.used || 0} MB
+          <div className="flex items-baseline gap-1">
+            <div className="text-2xl font-bold text-slate-800">
+              {stats?.memory?.kernel || 0}
+            </div>
+            <div className="text-xs font-bold text-slate-400">MB</div>
           </div>
-          <div className="mt-4 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+          <div className="mt-2 text-[10px] text-slate-400 font-medium flex justify-between">
+            <span>System: {stats?.memory?.percent || 0}%</span>
+            <span>{stats?.memory?.used || 0} / {stats?.memory?.total || 0} MB</span>
+          </div>
+          <div className="mt-2 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
             <div 
               className="h-full bg-amber-500 transition-all duration-500" 
               style={{ width: `${stats?.memory?.percent || 0}%` }} 
