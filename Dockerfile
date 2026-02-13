@@ -39,6 +39,7 @@ RUN apk add --no-cache libc6-compat curl
 
 # 复制构建产物和必要的运行文件
 # 注意：Standalone 模式不需要 pnpm 运行时
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/bin ./bin
