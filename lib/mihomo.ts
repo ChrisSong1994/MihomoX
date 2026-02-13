@@ -624,6 +624,38 @@ export const getKernelStatus = () => {
 };
 
 /**
+ * 获取内核进程的内存占用 (MB)
+ */
+export const getKernelMemoryUsage = (): number => {
+  const pid = mihomoProcess?.pid || getSavedPid();
+  if (!pid || !isProcessRunning(pid)) return 0;
+
+  try {
+    if (process.platform === "win32") {
+      // Windows 使用 tasklist
+      const output = execSync(`tasklist /fi "PID eq ${pid}" /nh /fo csv`).toString();
+      const parts = output.split(",");
+      if (parts.length > 4) {
+        // 格式通常是 "Name","PID","Session Name","Session#","Mem Usage"
+        // 例如 "mihomo.exe","1234","Console","1","25,400 K"
+        const memStr = parts[4].replace(/[^\d]/g, "");
+        return parseInt(memStr) / 1024;
+      }
+    } else {
+      // 类 Unix 使用 ps
+      const output = execSync(`ps -p ${pid} -o rss=`).toString().trim();
+      if (output) {
+        // RSS 单位是 KB
+        return parseInt(output) / 1024;
+      }
+    }
+  } catch (e) {
+    console.error("[Mihomo] Failed to get memory usage for PID:", pid, e);
+  }
+  return 0;
+};
+
+/**
  * 从内存中获取内核日志
  */
 export const getKernelLogs = () => {
