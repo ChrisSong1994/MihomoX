@@ -1,6 +1,5 @@
 {
-  "mixed_port": 7890,
-  "web_port": 9090,
-  "external-controller": "127.0.0.1:9099",
+  "mixed_port": 7899,
+  "controller_port": 9099,
   "secret": ""
 }

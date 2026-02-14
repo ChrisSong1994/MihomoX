@@ -96,8 +96,8 @@ export const generateFullConfig = () => {
   });
 
   // 2. 注入系统配置（优先级最高）
-  const mixedPort = settings.mixed_port || initial.mixed_port || 7890;
-  const controllerPort = settings.controller_port || 9099;
+  const mixedPort = settings.mixed_port || initial.mixed_port;
+  const controllerPort = settings.controller_port;
 
   mergedConfig["mixed-port"] = mixedPort;
   mergedConfig["external-controller"] = `127.0.0.1:${controllerPort}`;

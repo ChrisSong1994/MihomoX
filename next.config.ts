@@ -19,9 +19,8 @@ const config: NextConfig = {
     console.log('\x1b[36m%s\x1b[0m', '  MihomoNext 启动成功！');
     console.log('\x1b[36m%s\x1b[0m', `  登录账号: ${username}`);
     console.log('\x1b[36m%s\x1b[0m', `  登录密码: ${password}`);
-    console.log('\x1b[36m%s\x1b[0m', `  WEB 端口: ${ports.web_port}`);
-    console.log('\x1b[36m%s\x1b[0m', `  混合端口: ${ports.mixed_port}`);
-    console.log('\x1b[36m%s\x1b[0m', `  控制器端口: ${controllerPort}`);
+    console.log('\x1b[36m%s\x1b[0m', `  WEB 端口: 3790`);
+    console.log('\x1b[36m%s\x1b[0m', `  代理端口: ${ports.mixed_port}`);
     console.log('\x1b[36m%s\x1b[0m', '--------------------------------------------------');
 
     return [
