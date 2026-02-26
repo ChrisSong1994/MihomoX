@@ -11,6 +11,11 @@ export default function Header() {
   
   const [isRunning, setIsRunning] = useState(false);
 
+  // 从当前路径中提取语言环境
+  const localeMatch = pathname.match(/^\/(zh|en)(\/|$)/);
+  const currentLocale = localeMatch ? localeMatch[1] : 'zh';
+  const purePathname = localeMatch ? pathname.replace(/^\/(zh|en)/, '') : pathname;
+
   const routeTitles: Record<string, string> = {
     "/": ts("status"),
     "/subscriptions": ts("subscriptions"),
@@ -37,7 +42,7 @@ export default function Header() {
   return (
     <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 flex items-center justify-between px-8">
       <h1 className="text-slate-800 font-semibold text-lg">
-        {routeTitles[pathname] || "MihomoNext"}
+        {routeTitles[purePathname] || "MihomoNext"}
       </h1>
       <div className="flex items-center gap-4">
         {isRunning ? (
