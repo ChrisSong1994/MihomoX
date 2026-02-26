@@ -1,0 +1,5 @@
+{
+  "mixed_port": 7899,
+  "controller_port": 9099,
+  "secret": ""
+}
