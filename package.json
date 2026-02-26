@@ -2,11 +2,21 @@
   "name": "mihomo-next",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "mihomo-next": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
   "scripts": {
     "dev": "next dev -p 3790",
     "build": "next build",
+    "build:cli": "tsup src/cli.ts --format cjs --clean",
     "start": " next start -p 3790",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@types/js-yaml": "^4.0.9",
@@ -29,9 +39,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "commander": "^14.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "ts-node": "^10.9.2",
+    "tsup": "^8.5.1",
+    "typescript": "^5",
+    "vitest": "^4.0.18",
+    "winston": "^3.19.0"
   }
 }

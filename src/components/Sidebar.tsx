@@ -10,13 +10,17 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations('Sidebar');
+  
+  // 从当前路径中提取语言环境
+  const localeMatch = pathname.match(/^\/(zh|en)(\/|$)/);
+  const currentLocale = localeMatch ? localeMatch[1] : 'zh';
 
   const menuItems = [
-    { name: t("status"), href: "/", icon: LayoutDashboard },
-    { name: t("subscriptions"), href: "/subscriptions", icon: Library },
-    { name: t("proxies"), href: "/proxies", icon: Globe },
-    { name: t("logs"), href: "/logs", icon: FileText },
-    { name: t("settings"), href: "/settings", icon: Settings },
+    { name: t("status"), href: `/${currentLocale}`, icon: LayoutDashboard },
+    { name: t("subscriptions"), href: `/${currentLocale}/subscriptions`, icon: Library },
+    { name: t("proxies"), href: `/${currentLocale}/proxies`, icon: Globe },
+    { name: t("logs"), href: `/${currentLocale}/logs`, icon: FileText },
+    { name: t("settings"), href: `/${currentLocale}/settings`, icon: Settings },
   ];
 
   const handleLogout = async () => {
@@ -40,7 +44,7 @@ export default function Sidebar() {
 
       <nav className="flex-1 px-4 space-y-1">
         {menuItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/" && pathname.includes(item.href));
+          const isActive = pathname === item.href || (item.href !== `/${currentLocale}` && pathname.includes(item.href));
           const Icon = item.icon;
           return (
             <Link

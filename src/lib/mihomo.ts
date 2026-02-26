@@ -4,6 +4,7 @@ import fs from "fs";
 import yaml from "js-yaml";
 import { getSettings, getInitialConfig, getSubscriptions } from "./store";
 import { getPaths, ensureDirectories } from "./paths";
+import { logger } from "./logger";
 
 const paths = getPaths();
 
@@ -520,7 +521,6 @@ const runKernel = (bin: string, configDir: string) => {
 export const addLog = (msg: string) => {
   const now = new Date();
   const timestamp = now.toLocaleTimeString();
-  const dateStr = now.toISOString().split("T")[0]; // 日期格式：YYYY-MM-DD
   const formattedMsg = `[${timestamp}] ${msg}`;
 
   // 内存缓冲
@@ -530,19 +530,7 @@ export const addLog = (msg: string) => {
   }
 
   // 持久化
-  try {
-    const settings = getSettings();
-    const logDir = settings.logPath || getDefaultLogPath();
-
-    if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir, { recursive: true });
-    }
-
-    const logFile = path.join(logDir, `mihomo-${dateStr}.log`);
-    fs.appendFileSync(logFile, formattedMsg + "\n", "utf8");
-  } catch (e) {
-    console.error("[Mihomo] Failed to persist log:", e);
-  }
+  logger.info(msg);
 };
 
 /**

@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
-import { loadEffectivePorts } from './lib/store';
+import { loadEffectivePorts } from './src/lib/store';
 
 const withNextIntl = createNextIntlPlugin();
 
@@ -13,14 +13,14 @@ const config: NextConfig = {
 
     // 2. 在 Next.js 配置加载时（启动时）打印账号密码信息
     const username = process.env.MIHOMONEXT_USERNAME || 'mihomonext';
-    const password = process.env.MIHOMONEXT_PASSWORD || 'admin-123456';
+    const password = process.env.MIHOMONEXT_PASSWORD || 'pw_123456';
     
     console.log('\x1b[36m%s\x1b[0m', '--------------------------------------------------');
-    console.log('\x1b[36m%s\x1b[0m', '  MihomoNext 启动成功！');
-    console.log('\x1b[36m%s\x1b[0m', `  登录账号: ${username}`);
-    console.log('\x1b[36m%s\x1b[0m', `  登录密码: ${password}`);
-    console.log('\x1b[36m%s\x1b[0m', `  WEB 端口: 3790`);
-    console.log('\x1b[36m%s\x1b[0m', `  代理端口: ${ports.mixed_port}`);
+    console.log('\x1b[36m%s\x1b[0m', '  MihomoNext launched successfully!');
+    console.log('\x1b[36m%s\x1b[0m', `  username: ${username}`);
+    console.log('\x1b[36m%s\x1b[0m', `  password: ${password}`);
+    console.log('\x1b[36m%s\x1b[0m', `  WEB PORT: ${3790}`);
+    console.log('\x1b[36m%s\x1b[0m', `  MIXED PORT: ${ports.mixed_port}`);
     console.log('\x1b[36m%s\x1b[0m', '--------------------------------------------------');
 
     return [
