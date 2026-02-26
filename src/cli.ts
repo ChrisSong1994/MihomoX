@@ -13,8 +13,8 @@ if (process.env.TS_NODE_DEV) {
 const program = new Command();
 
 program
-  .name('mihomo-next')
-  .description('MihomoNext CLI Tool')
+  .name('mihomox')
+  .description('MihomoX CLI Tool')
   .version('0.1.0')
   .option('--log-level <level>', 'Set log level (debug, info, warn, error)', 'info')
   .hook('preAction', (thisCommand) => {

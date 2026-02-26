@@ -2,19 +2,19 @@ import path from 'path';
 import os from 'os';
 import fs from 'fs';
 
-const APP_NAME = 'MihomoNext';
+const APP_NAME = 'MihomoX';
 
 /**
  * 获取应用程序数据根目录
  * 开发环境: 项目根目录下的 .userdata 文件夹
- * macOS: ~/Library/Application Support/MihomoNext
- * Windows: %APPDATA%/MihomoNext
- * Linux: ~/.config/mihomonext
+ * macOS: ~/Library/Application Support/MihomoX
+ * Windows: %APPDATA%/MihomoX
+ * Linux: ~/.config/MihomoX
  */
 export const getAppDataDir = () => {
   // 优先使用环境变量指定的目录
-  if (process.env.MIHOMONEXT_DATA_DIR) {
-    return path.resolve(process.env.MIHOMONEXT_DATA_DIR);
+  if (process.env.MIHOMOX_DATA_DIR) {
+    return path.resolve(process.env.MIHOMOX_DATA_DIR);
   }
 
   // 开发环境下使用项目根目录下的 .userdata

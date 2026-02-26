@@ -12,11 +12,11 @@ const config: NextConfig = {
     const controllerPort = ports.controller_port;
 
     // 2. 在 Next.js 配置加载时（启动时）打印账号密码信息
-    const username = process.env.MIHOMONEXT_USERNAME || 'mihomonext';
-    const password = process.env.MIHOMONEXT_PASSWORD || 'pw_123456';
+    const username = process.env.MihomoX_USERNAME || 'MihomoX';
+    const password = process.env.MihomoX_PASSWORD || 'pw_123456';
     
     console.log('\x1b[36m%s\x1b[0m', '--------------------------------------------------');
-    console.log('\x1b[36m%s\x1b[0m', '  MihomoNext launched successfully!');
+    console.log('\x1b[36m%s\x1b[0m', '  MihomoX launched successfully!');
     console.log('\x1b[36m%s\x1b[0m', `  username: ${username}`);
     console.log('\x1b[36m%s\x1b[0m', `  password: ${password}`);
     console.log('\x1b[36m%s\x1b[0m', `  WEB PORT: ${3790}`);

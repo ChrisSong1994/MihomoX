@@ -4,7 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 
 export const metadata: Metadata = {
-  title: "MihomoNext",
+  title: "MihomoX",
   description: "An integrated Clash tool based on Mihomo kernel",
 };
 

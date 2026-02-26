@@ -60,7 +60,7 @@ subCommand
       });
       
       logger.info(`Subscription added: ${newSub.id}`);
-      logger.info('To update content, run: mihomo-next sub update ' + newSub.name);
+      logger.info('To update content, run: mihomox sub update ' + newSub.name);
     } catch (error: any) {
       logger.error(`Failed to add subscription: ${error.message}`);
       process.exit(1);

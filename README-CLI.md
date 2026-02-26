@@ -1,6 +1,6 @@
-# MihomoNext CLI
+# MihomoX CLI
 
-A powerful command-line interface for managing the MihomoNext application, kernel, and subscriptions.
+A powerful command-line interface for managing the MihomoX application, kernel, and subscriptions.
 
 ## Installation
 
@@ -9,13 +9,13 @@ A powerful command-line interface for managing the MihomoNext application, kerne
 pnpm install -g .
 
 # Or run locally
-pnpm mihomo-next --help
+pnpm mihomox --help
 ```
 
 ## Usage
 
 ```bash
-mihomo-next [command] [options]
+mihomox [command] [options]
 ```
 
 ### Global Options
@@ -28,7 +28,7 @@ mihomo-next [command] [options]
 
 #### Service Management (`svc`)
 
-Manage the MihomoNext web service (Next.js application).
+Manage the MihomoX web service (Next.js application).
 
 - `svc start`: Start the service in background
   - `-p, --port <number>`: Port to listen on (Env: `CLI_PORT`, Default: 3000)

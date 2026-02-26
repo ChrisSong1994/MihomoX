@@ -7,7 +7,7 @@ import { logger, LOG_FILE_PATH } from '../lib/logger';
 const PID_FILE = path.join(process.cwd(), '.next/server.pid');
 
 export const svcCommand = new Command('svc')
-  .description('Manage MihomoNext service lifecycle');
+  .description('Manage MihomoX service lifecycle');
 
 svcCommand
   .command('start')

@@ -16,7 +16,7 @@ const getLogLevel = (): string => {
 const getLogPath = () => {
   try {
     const paths = getPaths();
-    return path.join(paths.logs, 'mihomo-next.log');
+    return path.join(paths.logs, 'mihomox.log');
   } catch (e) {
     return null;
   }

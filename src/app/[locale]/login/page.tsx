@@ -51,7 +51,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full p-8 bg-white rounded-2xl shadow-xl">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-slate-800">{t("title")}</h1>
-          <p className="text-slate-500 mt-2">Welcome back to MihomoNext</p>
+          <p className="text-slate-500 mt-2">Welcome back to MihomoX</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

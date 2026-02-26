@@ -326,7 +326,7 @@ export default function SettingsPage() {
 
       {/* 关于 */}
       <div className="text-center text-slate-400 text-xs">
-        MihomoNext Dashboard v1.0.0 • Powered by Next.js & Mihomo
+        MihomoX Dashboard v1.0.0 • Powered by Next.js & Mihomo
       </div>
 
       {/* 配置文件弹窗 */}

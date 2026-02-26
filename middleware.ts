@@ -22,7 +22,7 @@ export default function middleware(request: NextRequest) {
 
   // 2. 检查认证状态
   const authToken = request.cookies.get('auth_token')?.value;
-  const isAuthenticated = authToken === 'mihomonext_authenticated';
+  const isAuthenticated = authToken === 'MihomoX_authenticated';
 
   // 获取语言前缀（如果有）
   const localeMatch = pathname.match(/^\/(zh|en)(\/|$)/);

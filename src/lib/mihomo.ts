@@ -652,10 +652,10 @@ export const getKernelLogs = () => {
 
 // 系统启动时记录账号密码信息
 const logStartupInfo = () => {
-  const username = process.env.MIHOMONEXT_USERNAME || "mihomonext";
-  const password = process.env.MIHOMONEXT_PASSWORD || "admin-123456";
+  const username = process.env.MihomoX_USERNAME || "MihomoX";
+  const password = process.env.MihomoX_PASSWORD || "admin-123456";
   addLog(
-    `[SYSTEM] MihomoNext started! Login Username: ${username}, Password: ${password}`,
+    `[SYSTEM] MihomoX started! Login Username: ${username}, Password: ${password}`,
   );
 };
 

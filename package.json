@@ -1,9 +1,9 @@
 {
-  "name": "mihomo-next",
+  "name": "mihomox",
   "version": "0.1.0",
   "private": true,
   "bin": {
-    "mihomo-next": "./dist/cli.js"
+    "mihomox": "./dist/cli.js"
   },
   "files": [
     "dist",

@@ -1,7 +1,7 @@
 services:
-  mihomo-next:
+  mihomox:
     build: .
-    container_name: mihomo-next
+    container_name: mihomox
     restart: always
     ports:
       - "3000:3000"     # Web UI
@@ -11,6 +11,6 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - MIHOMONEXT_DATA_DIR=/app/.userdata
+      - MIHOMOX_DATA_DIR=/app/.userdata
       # 如果需要自定义密钥，可以在这里设置
       # - MIHOMO_SECRET=your_secret

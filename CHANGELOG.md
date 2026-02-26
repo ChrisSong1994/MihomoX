@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **CLI Tool**: Introduced `mihomo-next` CLI for managing the application.
+- **CLI Tool**: Introduced `mihomox` CLI for managing the application.
   - `svc`: Start/stop/status/logs for the Next.js service.
   - `kernel`: Start/stop/status for the Mihomo kernel.
   - `sub`: Add/list/update/remove proxy subscriptions.
