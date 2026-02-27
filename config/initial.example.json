@@ -1,0 +1,10 @@
+{
+  "description": "MihomoX 配置文件示例",
+  "controller_port": 9099,
+  "mixed_port": 7890,
+  "secret": "your-mihomo-secret-here",
+  "log_level": "info",
+  "allow_lan": true,
+  "external_ui": "",
+  "mode": "rule"
+}
