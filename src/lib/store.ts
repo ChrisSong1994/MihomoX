@@ -1,36 +1,16 @@
 import fs from "fs";
 import path from "path";
 import { getPaths, ensureDirectories } from "./paths";
+import type { Subscription, AppSettings, Result } from "../server/types";
 
 const paths = getPaths();
 const SUBS_FILE = paths.subsFile;
 const SETTINGS_FILE = paths.settingsFile;
 
-export interface Subscription {
-  id: string;
-  name: string;
-  url: string;
-  enabled: boolean;
-  lastUpdate?: string;
-  nodeCount?: number;
-  trafficUsed?: number;
-  trafficTotal?: number;
-  expireDate?: string;
-  status: "active" | "expired" | "error" | "idle";
-}
-
 // 确保配置目录存在
 const ensureDir = () => {
   ensureDirectories();
 };
-
-export interface AppSettings {
-  logPath: string;
-  locale: string;
-  mixed_port?: number;
-  controller_port?: number;
-  secret?: string;
-}
 
 const INITIAL_CONFIG_FILE = path.join(process.cwd(), "config", "inital.json");
 
@@ -42,23 +22,25 @@ const defaultSettings: AppSettings = {
 /**
  * 获取初始默认配置
  */
-export const getInitialConfig = () => {
+export const getInitialConfig = (): Result<Record<string, unknown>> => {
   if (fs.existsSync(INITIAL_CONFIG_FILE)) {
     try {
       const data = fs.readFileSync(INITIAL_CONFIG_FILE, "utf-8");
-      return JSON.parse(data);
+      return { success: true, data: JSON.parse(data) };
     } catch (e) {
-      console.error("Read initial config error:", e);
+      const error = e as Error;
+      console.error("Read initial config error:", error);
+      return { success: false, error };
     }
   }
-  return {};
+  return { success: true, data: {} };
 };
 
 /**
  * 加载最终生效的端口配置
  * 优先级：环境变量 > settings.json > initial.json
  */
-export const loadEffectivePorts = () => {
+export const loadEffectivePorts = (): { mixed_port: number; controller_port: number } => {
   const envWebPort = process.env.WEB_PORT
     ? parseInt(process.env.WEB_PORT)
     : null;
@@ -70,13 +52,15 @@ export const loadEffectivePorts = () => {
     : null;
 
   const settings = getSettings();
-  const initial = getInitialConfig();
+  const initialResult = getInitialConfig();
+  const initial = initialResult.success ? initialResult.data : {};
+  
   const finalMixedPort =
-    envMixedPort || settings.mixed_port || initial.mixed_port;
+    envMixedPort || (settings.mixed_port ?? (initial.mixed_port as number | undefined)) || 7890;
 
   // 处理 external-controller 格式 "127.0.0.1:9099"
   const finalControllerPort =
-    envControllerPort || settings.controller_port || initial.controller_port;
+    envControllerPort || (settings.controller_port ?? (initial.controller_port as number | undefined)) || 9090;
 
   // 记录日志
   console.log("[Config] Effective Ports Loaded:");
@@ -102,9 +86,6 @@ export const loadEffectivePorts = () => {
     controller_port: finalControllerPort,
   });
 
-  // 热加载支持：如果内核正在运行，且端口发生变化，则通知内核（这里主要由 startKernel 在下次启动时应用）
-  // 实际上可以通过 PATCH /configs 更新混合端口
-
   return {
     mixed_port: finalMixedPort,
     controller_port: finalControllerPort,
@@ -117,7 +98,7 @@ export const loadEffectivePorts = () => {
 export const hotUpdatePorts = async (updates: {
   mixed_port?: number;
   controller_port?: number;
-}) => {
+}): Promise<AppSettings> => {
   const settings = saveSettings(updates);
 
   // 尝试通知正在运行的内核（如果已启动）
@@ -149,11 +130,12 @@ export const getSettings = (): AppSettings => {
     const data = fs.readFileSync(SETTINGS_FILE, "utf-8");
     return { ...defaultSettings, ...JSON.parse(data) };
   } catch (e) {
+    console.error("Read settings error:", e);
     return defaultSettings;
   }
 };
 
-export const saveSettings = (settings: Partial<AppSettings>) => {
+export const saveSettings = (settings: Partial<AppSettings>): AppSettings => {
   ensureDir();
   const current = getSettings();
   const updated = { ...current, ...settings };
@@ -180,7 +162,7 @@ export const saveSubscriptions = (subs: Subscription[]) => {
   fs.writeFileSync(SUBS_FILE, JSON.stringify(subs, null, 2));
 };
 
-export const addSubscription = (sub: Omit<Subscription, "id" | "status">) => {
+export const addSubscription = (sub: Omit<Subscription, "id" | "status">): Subscription => {
   const subs = getSubscriptions();
   const newSub: Subscription = {
     ...sub,
