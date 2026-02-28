@@ -5,7 +5,7 @@ import yaml from "js-yaml";
 import { getSettings, getInitialConfig, getSubscriptions } from "./store";
 import { getPaths, ensureDirectories } from "./paths";
 import { log } from "./logger";
-import type { MihomoConfig } from "../server/types";
+import type { MihomoConfig } from "../types";
 
 const paths = getPaths();
 

@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
+import { getUserByUsername } from './users';
 
 // 简单的空操作 logger（兼容 Edge Runtime）
 const noopLogger = {
@@ -80,7 +81,7 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
 /**
  * 从请求中获取当前用户
  */
-export async function getCurrentUser(): Promise<{ username: string } | null> {
+export async function getCurrentUser(): Promise<{ username: string; role?: string } | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('auth_token')?.value;
   
@@ -89,7 +90,10 @@ export async function getCurrentUser(): Promise<{ username: string } | null> {
   const payload = await verifyToken(token);
   if (!payload || !payload.username) return null;
   
-  return { username: payload.username as string };
+  return { 
+    username: payload.username as string,
+    role: payload.role as string | undefined
+  };
 }
 
 /**

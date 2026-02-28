@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSettings, saveSettings, hotUpdatePorts } from '@/lib/store';
 import { generateFullConfig, getKernelStatus, updateConfigFile } from '@/lib/mihomo';
 import { handleApiError, validateBody } from '@/lib/api-utils';
-import { appSettingsSchema, portUpdateSchema } from '@/server/types';
+import { appSettingsSchema, portUpdateSchema } from '@/types';
 import { log } from '@/lib/logger';
 
 /**

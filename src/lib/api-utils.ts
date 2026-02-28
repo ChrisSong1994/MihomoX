@@ -3,7 +3,7 @@
  */
 
 import { z } from 'zod';
-import type { ApiResponse } from '../server/types';
+import type { ApiResponse } from '../types';
 import { log } from './logger';
 
 /**

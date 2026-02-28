@@ -5,7 +5,8 @@
     "subscriptions": "Subscriptions",
     "logs": "System Logs",
     "settings": "System Settings",
-    "logout": "Logout"
+    "logout": "Logout",
+    "users": "User Management"
   },
   "Header": {
     "running": "Running",
@@ -144,5 +145,29 @@
     "error": "Invalid username or password",
     "placeholderUsername": "Enter username",
     "placeholderPassword": "Enter password"
+  },
+  "Users": {
+    "title": "User Management",
+    "description": "Manage system users and permissions",
+    "addUser": "Add User",
+    "editUser": "Edit User",
+    "username": "Username",
+    "role": "Role",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "actions": "Actions",
+    "admin": "Administrator",
+    "customer": "Customer",
+    "administrator": "Administrator",
+    "noUsers": "No users yet",
+    "edit": "Edit",
+    "delete": "Delete",
+    "usernamePlaceholder": "Enter username",
+    "passwordRequired": "Required, at least 6 characters",
+    "passwordPlaceholder": "Leave empty to keep current password",
+    "optional": "Optional",
+    "cancel": "Cancel",
+    "save": "Save",
+    "create": "Create"
   }
 }

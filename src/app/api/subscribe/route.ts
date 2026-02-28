@@ -6,8 +6,8 @@ import { getSubscriptions, addSubscription, deleteSubscription, updateSubscripti
 import { addLog, generateFullConfig } from '@/lib/mihomo';
 import { getPaths } from '@/lib/paths';
 import { handleApiError, validateBody } from '@/lib/api-utils';
-import { subscriptionSchema, subscriptionUpdateSchema, subscriptionActionSchema } from '@/server/types';
-import type { MihomoConfig } from '@/server/types';
+import { subscriptionSchema, subscriptionUpdateSchema, subscriptionActionSchema } from '@/types';
+import type { MihomoConfig } from '@/types';
 import { log } from '@/lib/logger';
 
 const paths = getPaths();

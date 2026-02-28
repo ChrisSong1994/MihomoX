@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { getPaths, ensureDirectories } from "./paths";
 import { log } from "./logger";
-import type { Subscription, AppSettings, Result } from "../server/types";
+import type { Subscription, AppSettings, Result } from "../types";
 
 const paths = getPaths();
 const SUBS_FILE = paths.subsFile;

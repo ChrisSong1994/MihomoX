@@ -4,22 +4,41 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
-import { LayoutDashboard, Globe, Library, FileText, Settings, LogOut } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { LayoutDashboard, Globe, Library, FileText, Settings, LogOut, Users } from "lucide-react";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations('Sidebar');
+  const [userRole, setUserRole] = useState<string>('customer');
   
   // 从当前路径中提取语言环境
   const localeMatch = pathname.match(/^\/(zh|en)(\/|$)/);
   const currentLocale = localeMatch ? localeMatch[1] : 'zh';
+
+  // 获取当前用户角色
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data.success && data.user) {
+          setUserRole(data.user.role || 'customer');
+        }
+      } catch (error) {
+        console.error('Failed to fetch user role:', error);
+      }
+    };
+    fetchUserRole();
+  }, []);
 
   const menuItems = [
     { name: t("status"), href: `/${currentLocale}`, icon: LayoutDashboard },
     { name: t("subscriptions"), href: `/${currentLocale}/subscriptions`, icon: Library },
     { name: t("proxies"), href: `/${currentLocale}/proxies`, icon: Globe },
     { name: t("logs"), href: `/${currentLocale}/logs`, icon: FileText },
+    ...(userRole === 'administrator' ? [{ name: t("users"), href: `/${currentLocale}/users`, icon: Users }] : []),
     { name: t("settings"), href: `/${currentLocale}/settings`, icon: Settings },
   ];
 

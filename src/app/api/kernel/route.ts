@@ -5,8 +5,8 @@ import fs from 'fs';
 import yaml from 'js-yaml';
 import { getPaths, ensureDirectories } from '@/lib/paths';
 import { handleApiError, validateBody } from '@/lib/api-utils';
-import { kernelActionSchema } from '@/server/types';
-import type { MihomoConfig, TrafficData } from '@/server/types';
+import { kernelActionSchema } from '@/types';
+import type { MihomoConfig, TrafficData } from '@/types';
 import { log } from '@/lib/logger';
 
 /**
