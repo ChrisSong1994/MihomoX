@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
+import Image from "next/image";
 import { Lock, User, Loader2 } from "lucide-react";
 
 /**
@@ -77,8 +78,14 @@ export default function LoginPage() {
       </div>
 
       <div className="max-w-md w-full p-8 bg-white rounded-2xl shadow-xl">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-slate-800">{t("title")}</h1>
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <Image src="/logo.png" alt="Logo" width={52} height={52} className="rounded-lg" />
+          <span className="text-4xl font-bold bg-linear-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            MihomoX
+          </span>
+        </div>
+
+        <div className="text-center mb-4">
           <p className="text-slate-500 mt-2">Welcome back to MihomoX</p>
         </div>
 

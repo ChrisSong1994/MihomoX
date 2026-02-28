@@ -39,7 +39,7 @@ export default function Sidebar() {
     <aside className="w-64 bg-white border-r border-slate-200 fixed h-full z-50 flex flex-col">
       <div className="p-6 flex items-center gap-3">
         <Image src="/logo.png" alt="Logo" width={32} height={32} className="rounded-lg" />
-        <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+        <span className="text-2xl font-bold bg-linear-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
           MihomoX
         </span>
       </div>
