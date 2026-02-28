@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createToken, validateCredentials, parseLoginRequest } from '@/lib/auth';
+import { log } from '@/lib/logger';
 
 /**
  * 登录接口，验证用户名和密码并设置安全的 Cookie
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    console.error('[Auth] Login error:', error);
+    log.error('[Auth] Login error:', error);
     return NextResponse.json(
       { success: false, message: 'Internal Server Error' },
       { status: 500 }

@@ -4,6 +4,9 @@ import type { NextRequest } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { securityMiddleware } from '@/lib/security';
 
+// 明确指定使用 Node.js Runtime（非 Edge）
+export const runtime = 'nodejs';
+
 const intlMiddleware = createMiddleware({
   locales: ['en', 'zh'],
   defaultLocale: 'zh',
@@ -11,11 +14,16 @@ const intlMiddleware = createMiddleware({
 });
 
 export default async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
   // 1. 应用安全中间件
   const securityResponse = securityMiddleware(request);
   
-  const { pathname } = request.nextUrl;
-
+  // 如果 securityMiddleware 返回了错误响应，直接返回
+  if (securityResponse instanceof Response && !securityResponse.ok) {
+    return securityResponse;
+  }
+  
   // 2. 设置路径名 Header
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-pathname', pathname);
@@ -65,5 +73,11 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|mihomo-api|_next|static|_vercel|[\\w-]+\\.\\w+).*)']
+  // 匹配所有页面路由，排除 API、静态文件等
+  matcher: [
+    '/',
+    '/:locale(zh|en)',
+    '/:locale(zh|en)/:path*',
+    '/login',
+  ]
 };

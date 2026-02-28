@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/components/Toast';
 
 export default function SettingsPage() {
@@ -18,7 +18,8 @@ export default function SettingsPage() {
   const [appSettings, setAppSettings] = useState<any>({ logPath: '' });
   const locale = useLocale();
   const router = useRouter();
-
+  const pathname = usePathname();
+  
   const fetchStatus = async () => {
     try {
       const res = await fetch('/api/kernel');
@@ -26,7 +27,7 @@ export default function SettingsPage() {
       setRunning(data.running);
       setConfig(data.config);
     } catch (e) {
-      console.error(e);
+      console.error('[Settings] Fetch status error:', e);
     }
   };
 
@@ -37,7 +38,7 @@ export default function SettingsPage() {
       // API 返回格式: { success: true, data: {...} }
       setAppSettings(data.data || data);
     } catch (e) {
-      console.error(e);
+      console.error('[Settings] Fetch status error:', e);
     }
   };
 
@@ -106,12 +107,14 @@ export default function SettingsPage() {
     // 1. 持久化到本地 settings.json
     await saveAppSettings({ locale: newLocale });
     
-    // 2. 设置 next-intl 的 Cookie (重要: 需要设置 domain 以确保跨路径有效)
+    // 2. 设置 next-intl 的 Cookie
     const cookieOptions = 'path=/; max-age=31536000; SameSite=Lax';
     document.cookie = `NEXT_LOCALE=${newLocale}; ${cookieOptions}`;
     
-    // 3. 强制刷新页面以应用新语言
-    window.location.reload();
+    // 3. 更新 URL 路径以确保语言切换正确
+    const currentPath = pathname.replace(/^\/(zh|en)/, '') || '/';
+    const newPath = `/${newLocale}${currentPath === '/' ? '' : currentPath}`;
+    router.push(newPath);
   };
 
   const updateConfig = async (key: string, value: any) => {

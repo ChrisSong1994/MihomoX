@@ -3,6 +3,7 @@ import { getSettings, saveSettings, hotUpdatePorts } from '@/lib/store';
 import { generateFullConfig, getKernelStatus, updateConfigFile } from '@/lib/mihomo';
 import { handleApiError, validateBody } from '@/lib/api-utils';
 import { appSettingsSchema, portUpdateSchema } from '@/server/types';
+import { log } from '@/lib/logger';
 
 /**
  * 获取当前设置
@@ -102,7 +103,7 @@ export async function PUT(req: Request) {
           });
         }
       } catch (e) {
-        console.warn('[Settings] Hot update failed, config will apply after restart');
+        log.warn('[Settings] Hot update failed, config will apply after restart');
       }
     }
 

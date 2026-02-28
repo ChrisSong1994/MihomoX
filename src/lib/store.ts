@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { getPaths, ensureDirectories } from "./paths";
+import { log } from "./logger";
 import type { Subscription, AppSettings, Result } from "../server/types";
 
 const paths = getPaths();
@@ -29,7 +30,7 @@ export const getInitialConfig = (): Result<Record<string, unknown>> => {
       return { success: true, data: JSON.parse(data) };
     } catch (e) {
       const error = e as Error;
-      console.error("Read initial config error:", error);
+      log.error("Read initial config error:", error);
       return { success: false, error };
     }
   }
@@ -63,11 +64,11 @@ export const loadEffectivePorts = (): { mixed_port: number; controller_port: num
     envControllerPort || (settings.controller_port ?? (initial.controller_port as number | undefined)) || 9090;
 
   // 记录日志
-  console.log("[Config] Effective Ports Loaded:");
-  console.log(
+  log.info("[Config] Effective Ports Loaded:");
+  log.info(
     `- MIXED_PORT: ${finalMixedPort} (Source: ${envMixedPort ? "Env" : settings.mixed_port ? "Settings" : "Initial"})`,
   );
-  console.log(
+  log.info(
     `- CONTROLLER_PORT: ${finalControllerPort} (Source: ${envControllerPort ? "Env" : settings.controller_port ? "Settings" : "Initial"})`,
   );
 
@@ -75,7 +76,7 @@ export const loadEffectivePorts = (): { mixed_port: number; controller_port: num
   const ports = [finalMixedPort, finalControllerPort];
   const uniquePorts = new Set(ports);
   if (uniquePorts.size !== ports.length) {
-    console.warn(
+    log.warn(
       "[Config] Warning: Port conflict detected! Please check your configuration.",
     );
   }
@@ -115,7 +116,7 @@ export const hotUpdatePorts = async (updates: {
       // 注意：Mihomo 不支持通过 API 动态修改 external-controller 端口，需要重启内核
     }
   } catch (e) {
-    console.error("[Config] Hot update ports error:", e);
+    log.error("[Config] Hot update ports error:", e);
   }
 
   return settings;
@@ -130,7 +131,7 @@ export const getSettings = (): AppSettings => {
     const data = fs.readFileSync(SETTINGS_FILE, "utf-8");
     return { ...defaultSettings, ...JSON.parse(data) };
   } catch (e) {
-    console.error("Read settings error:", e);
+    log.error("Read settings error:", e);
     return defaultSettings;
   }
 };
@@ -152,7 +153,7 @@ export const getSubscriptions = (): Subscription[] => {
     const data = fs.readFileSync(SUBS_FILE, "utf-8");
     return JSON.parse(data);
   } catch (e) {
-    console.error("Read subscriptions error:", e);
+    log.error("Read subscriptions error:", e);
     return [];
   }
 };

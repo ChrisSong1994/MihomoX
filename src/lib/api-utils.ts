@@ -4,6 +4,7 @@
 
 import { z } from 'zod';
 import type { ApiResponse } from '../server/types';
+import { log } from './logger';
 
 /**
  * API 错误类
@@ -63,7 +64,7 @@ export function handleApiError(error: unknown): Response {
     );
   }
 
-  console.error('[API Error]:', error);
+  log.error('[API Error]:', error);
   return Response.json(
     { success: false, error: 'Internal Server Error' },
     { status: 500 }

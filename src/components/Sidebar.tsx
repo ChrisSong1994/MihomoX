@@ -29,7 +29,7 @@ export default function Sidebar() {
       router.push(`/${currentLocale}/login`);
       router.refresh();
     } catch (error) {
-      console.error("Logout failed", error);
+      console.error("[Auth] Logout failed", error);
     }
   };
 

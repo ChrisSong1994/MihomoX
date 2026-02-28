@@ -2,6 +2,42 @@ import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 
+// 简单的空操作 logger（兼容 Edge Runtime）
+const noopLogger = {
+  warn: (..._args: unknown[]) => {},
+  error: (..._args: unknown[]) => {},
+  info: (..._args: unknown[]) => {},
+  debug: (..._args: unknown[]) => {}
+};
+
+type Logger = typeof noopLogger;
+
+// 动态导入 logger（避免在 Edge Runtime 中出错）
+let cachedLogger: Logger | null = null;
+
+const getLogger = (): Logger => {
+  if (cachedLogger) return cachedLogger;
+  
+  // 检查是否在 Edge Runtime 中
+  const isEdgeRuntime = typeof process === 'undefined' || 
+    !process.versions?.node;
+  
+  if (isEdgeRuntime) {
+    cachedLogger = noopLogger;
+    return cachedLogger;
+  }
+  
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const logger = require('./logger');
+    cachedLogger = logger.log || logger;
+    return cachedLogger || noopLogger;
+  } catch {
+    cachedLogger = noopLogger;
+    return cachedLogger;
+  }
+};
+
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || process.env.MIHOMO_SECRET || 'mihomox-default-secret-change-in-production'
 );
@@ -75,7 +111,7 @@ export function validateCredentials(
   
   // 生产环境检查：必须设置密码
   if (process.env.NODE_ENV === 'production' && !envPassword) {
-    console.warn('[Auth] SECURITY WARNING: No password set in production environment!');
+    getLogger().warn('[Auth] SECURITY WARNING: No password set in production environment!');
     return { valid: false, error: 'Server configuration error' };
   }
   
@@ -101,7 +137,7 @@ export function validateCredentials(
     
     // 没有设置密码时，允许登录但记录警告
     if (username === envUsername && password) {
-      console.warn('[Auth] WARNING: Logging in with default configuration. Please set MIHOMO_PASSWORD in production!');
+      getLogger().warn('[Auth] WARNING: Logging in with default configuration. Please set MIHOMO_PASSWORD in production!');
       return { valid: true, user: username };
     }
   }

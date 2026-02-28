@@ -19,7 +19,7 @@ export default function LogsPage() {
         setLogs(data.logs || []);
       }
     } catch (e) {
-      console.error("Fetch logs error:", e);
+      console.error('[Logs] Fetch logs error:', e);
     }
   };
 

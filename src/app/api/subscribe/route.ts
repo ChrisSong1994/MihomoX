@@ -8,6 +8,7 @@ import { getPaths } from '@/lib/paths';
 import { handleApiError, validateBody } from '@/lib/api-utils';
 import { subscriptionSchema, subscriptionUpdateSchema, subscriptionActionSchema } from '@/server/types';
 import type { MihomoConfig } from '@/server/types';
+import { log } from '@/lib/logger';
 
 const paths = getPaths();
 
@@ -92,7 +93,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: 'No enabled subscriptions to apply' }, { status: 400 });
       }
 
-      console.log(`[Subscribe] Applying ${urlsToFetch.length} subscriptions`);
+      log.info(`[Subscribe] Applying ${urlsToFetch.length} subscriptions`);
       
       const mergedConfig: MihomoConfig = {
         proxies: [],
@@ -193,7 +194,7 @@ export async function POST(req: Request) {
             }
           }
         } catch (err) {
-          console.error(`[Subscribe] Failed to fetch ${fetchUrl}:`, err);
+          log.error(`[Subscribe] Failed to fetch ${fetchUrl}:`, err);
         } finally {
           clearTimeout(timeoutId);
         }

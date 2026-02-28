@@ -40,7 +40,7 @@ export default function ProxiesPage() {
       }
       setLoading(false);
     } catch (e) {
-      console.error('Fetch proxies error:', e);
+        console.error('[Proxies] Fetch proxies error:', e);
       setLoading(false);
     }
   };
@@ -59,7 +59,7 @@ export default function ProxiesPage() {
       });
       fetchProxies();
     } catch (e) {
-      console.error('Select proxy error:', e);
+      console.error('[Proxies] Select proxy error:', e);
     }
   };
 
@@ -73,7 +73,7 @@ export default function ProxiesPage() {
         setLatencies(prev => ({ ...prev, [proxyName]: data.delay }));
       }
     } catch (e) {
-      console.error('Latency test error:', e);
+      console.error('[Proxies] Latency test error:', e);
     } finally {
       setTesting(prev => ({ ...prev, [proxyName]: false }));
     }

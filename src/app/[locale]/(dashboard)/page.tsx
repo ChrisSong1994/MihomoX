@@ -54,7 +54,7 @@ export default function Dashboard() {
           isp: 'Intranet',
         });
       } catch (e) {
-        console.error('Fetch error:', e);
+        console.error('[Dashboard] Fetch error:', e);
       }
     };
 

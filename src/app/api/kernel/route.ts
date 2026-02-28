@@ -7,6 +7,7 @@ import { getPaths, ensureDirectories } from '@/lib/paths';
 import { handleApiError, validateBody } from '@/lib/api-utils';
 import { kernelActionSchema } from '@/server/types';
 import type { MihomoConfig, TrafficData } from '@/server/types';
+import { log } from '@/lib/logger';
 
 /**
  * 获取内核状态和配置
@@ -28,7 +29,7 @@ export async function GET() {
         localConfig = yaml.load(fileContent) as MihomoConfig;
       }
     } catch (e) {
-      console.error('Failed to read local config:', e);
+      log.error('Failed to read local config:', e);
     }
 
     // 2. 如果内核运行，尝试从内核获取当前配置

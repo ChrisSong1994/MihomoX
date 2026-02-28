@@ -42,3 +42,5 @@ next-env.d.ts
 .userdata
 userdata
 dist
+
+.pnpm-store

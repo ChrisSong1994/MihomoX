@@ -4,7 +4,7 @@ import fs from "fs";
 import yaml from "js-yaml";
 import { getSettings, getInitialConfig, getSubscriptions } from "./store";
 import { getPaths, ensureDirectories } from "./paths";
-import { logger } from "./logger";
+import { log } from "./logger";
 import type { MihomoConfig } from "../server/types";
 
 const paths = getPaths();
@@ -90,7 +90,7 @@ export const generateFullConfig = (): MihomoConfig => {
           }
         }
       } catch (err) {
-        console.error(
+        log.error(
           `[Mihomo] Failed to merge subscription ${sub.name}:`,
           err,
         );
@@ -126,7 +126,7 @@ export const generateFullConfig = (): MihomoConfig => {
   // 3. 写入文件
   const configPath = paths.mihomoConfig;
   fs.writeFileSync(configPath, yaml.dump(mergedConfig), "utf8");
-  console.log(
+  log.info(
     `[Mihomo] Full config.yaml generated with ${subs.length} subscriptions`,
   );
 
@@ -139,7 +139,7 @@ export const generateFullConfig = (): MihomoConfig => {
 const ensureMihomoConfig = () => {
   const configPath = paths.mihomoConfig;
   if (!fs.existsSync(configPath)) {
-    console.log(
+    log.info(
       `[Mihomo] Config file not found at ${configPath}, generating...`,
     );
     generateFullConfig();
@@ -172,7 +172,7 @@ export const updateConfigFile = (updates: Record<string, unknown>) => {
     return { success: true };
   } catch (e: unknown) {
     const error = e as Error;
-    console.error("[Mihomo] Failed to save config file:", error);
+    log.error("[Mihomo] Failed to save config file:", error);
     return { success: false, error: error.message };
   }
 };
@@ -206,7 +206,7 @@ const savePid = (pid: number) => {
   try {
     fs.writeFileSync(PID_FILE, pid.toString(), "utf8");
   } catch (e) {
-    console.error("[Mihomo] Failed to save PID file:", e);
+    log.error("[Mihomo] Failed to save PID file:", e);
   }
 };
 
@@ -233,7 +233,7 @@ const getSavedPid = (): number | null => {
       return parseInt(pidStr, 10);
     }
   } catch (e) {
-    console.error("[Mihomo] Failed to read PID file:", e);
+    log.error("[Mihomo] Failed to read PID file:", e);
   }
   return null;
 };
@@ -270,7 +270,7 @@ export const getTrafficHistory = () => {
 const startLogsMonitor = async () => {
   if (logsAbortController) return;
 
-  console.log("[Mihomo] Starting logs monitor...");
+  log.info("[Mihomo] Starting logs monitor...");
   logsAbortController = new AbortController();
 
   const runMonitor = async () => {
@@ -305,7 +305,7 @@ const startLogsMonitor = async () => {
     } catch (e: unknown) {
       const error = e as Error;
       if (error.name === "AbortError") return;
-      console.error("[Mihomo] Logs monitor error:", error.message);
+      log.error("[Mihomo] Logs monitor error:", error.message);
       // 5 秒后重试
       setTimeout(() => {
         if (getKernelStatus() && logsAbortController) runMonitor();
@@ -322,7 +322,7 @@ const startLogsMonitor = async () => {
 const startTrafficMonitor = async () => {
   if (trafficInterval) return;
 
-  console.log("[Mihomo] Starting traffic monitor...");
+  log.info("[Mihomo] Starting traffic monitor...");
 
   const controller = new AbortController();
 
@@ -336,11 +336,11 @@ const startTrafficMonitor = async () => {
 
       const reader = res.body?.getReader();
       if (!reader) {
-        console.error("[Mihomo] Failed to get traffic reader");
+        log.error("[Mihomo] Failed to get traffic reader");
         return;
       }
 
-      console.log("[Mihomo] Traffic monitor connected");
+      log.info("[Mihomo] Traffic monitor connected");
 
       while (true) {
         const { done, value } = await reader.read();
@@ -365,7 +365,7 @@ const startTrafficMonitor = async () => {
       const error = e as Error;
       if (error.name === "AbortError") return;
 
-      console.error("[Mihomo] Traffic monitor error:", error.message);
+      log.error("[Mihomo] Traffic monitor error:", error.message);
       // 5 秒后重试
       trafficInterval = setTimeout(() => {
         trafficInterval = null;
@@ -414,7 +414,7 @@ export const startKernel = () => {
 
   // 检查二进制文件是否存在
   if (!fs.existsSync(bin)) {
-    console.error(`[Mihomo] Binary not found: ${bin}`);
+    log.error(`[Mihomo] Binary not found: ${bin}`);
     // 兜底：若缺少特定架构版本，尝试通用 amd64 版本
     const fallbackBin = path.join(
       process.cwd(),
@@ -424,7 +424,7 @@ export const startKernel = () => {
         : `mihomo-${process.platform}-amd64`,
     );
     if (fs.existsSync(fallbackBin)) {
-      console.log(`[Mihomo] Using fallback binary: ${fallbackBin}`);
+      log.info(`[Mihomo] Using fallback binary: ${fallbackBin}`);
       runKernel(fallbackBin, configDir);
     } else {
       return;
@@ -445,11 +445,11 @@ const runKernel = (bin: string, configDir: string) => {
     try {
       fs.chmodSync(bin, "755");
     } catch (err) {
-      console.error(`[Mihomo] Failed to set execution permissions: ${err}`);
+      log.error(`[Mihomo] Failed to set execution permissions: ${err}`);
     }
   }
 
-  console.log(`[Mihomo] Starting kernel: ${bin} -d ${configDir}`);
+  log.info(`[Mihomo] Starting kernel: ${bin} -d ${configDir}`);
 
   // 清空历史日志
   kernelLogs = [];
@@ -517,14 +517,14 @@ const runKernel = (bin: string, configDir: string) => {
   });
 
   mihomoProcess.on("close", (code) => {
-    console.log(`[Mihomo] Kernel process exited with code: ${code}`);
+    log.info(`[Mihomo] Kernel process exited with code: ${code}`);
     addLog(`[SYSTEM] Kernel process exited with code: ${code}`);
     mihomoProcess = null;
     clearPid();
   });
 
   mihomoProcess.on("error", (err) => {
-    console.error(`[Mihomo] Kernel failed to start: ${err}`);
+    log.error(`[Mihomo] Kernel failed to start: ${err}`);
     addLog(`[ERROR] Kernel failed to start: ${err.message}`);
     mihomoProcess = null;
   });
@@ -545,7 +545,7 @@ export const addLog = (msg: string) => {
   }
 
   // 持久化
-  logger.info(msg);
+  log.info(msg);
 };
 
 /**
@@ -604,7 +604,7 @@ export const getKernelStatus = () => {
       if (!logsAbortController) startLogsMonitor();
       return true;
     } else {
-      console.log(`[Mihomo] Process in memory (PID: ${mihomoProcess.pid}) is not running.`);
+      log.info(`[Mihomo] Process in memory (PID: ${mihomoProcess.pid}) is not running.`);
       mihomoProcess = null;
       clearPid();
     }
@@ -618,7 +618,7 @@ export const getKernelStatus = () => {
       if (!logsAbortController) startLogsMonitor();
       return true;
     } else {
-      console.log(`[Mihomo] Saved PID ${savedPid} is not running.`);
+      log.info(`[Mihomo] Saved PID ${savedPid} is not running.`);
       clearPid();
     }
   }
@@ -653,7 +653,7 @@ export const getKernelMemoryUsage = (): number => {
       }
     }
   } catch (e) {
-    console.error("[Mihomo] Failed to get memory usage for PID:", pid, e);
+    log.error("[Mihomo] Failed to get memory usage for PID:", pid, e);
   }
   return 0;
 };

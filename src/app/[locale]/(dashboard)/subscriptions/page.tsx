@@ -22,7 +22,7 @@ export default function SubscriptionsPage() {
         setSubs(data.subscriptions || []);
       }
     } catch (e) {
-      console.error('Fetch subscriptions error:', e);
+      console.error('[Subscriptions] Fetch subscriptions error:', e);
     }
   };
 
@@ -47,7 +47,7 @@ export default function SubscriptionsPage() {
         fetchSubs();
       }
     } catch (e) {
-      console.error('Add subscription error:', e);
+      console.error('[Subscriptions] Add subscription error:', e);
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +60,7 @@ export default function SubscriptionsPage() {
       await fetch(`/api/subscribe?id=${id}`, { method: 'DELETE' });
       fetchSubs();
     } catch (e) {
-      console.error('Delete subscription error:', e);
+      console.error('[Subscriptions] Delete subscription error:', e);
     }
   };
 
@@ -73,7 +73,7 @@ export default function SubscriptionsPage() {
       });
       fetchSubs();
     } catch (e) {
-      console.error('Toggle subscription error:', e);
+      console.error('[Subscriptions] Toggle subscription error:', e);
     }
   };
 
@@ -98,7 +98,7 @@ export default function SubscriptionsPage() {
         fetchSubs();
       }
     } catch (e) {
-      console.error('Edit subscription error:', e);
+      console.error('[Subscriptions] Edit subscription error:', e);
     }
   };
 
@@ -138,7 +138,7 @@ export default function SubscriptionsPage() {
         showToast('Error: ' + data.error, 'error');
       }
     } catch (e) {
-      console.error('Apply subscription error:', e);
+      console.error('[Subscriptions] Apply subscription error:', e);
     } finally {
       setIsLoading(false);
     }
@@ -155,7 +155,7 @@ export default function SubscriptionsPage() {
         setViewingConfig(null);
       }
     } catch (e) {
-      console.error('Fetch config content error:', e);
+      console.error('[Subscriptions] Fetch config content error:', e);
       showToast('Error fetching config content', 'error');
       setViewingConfig(null);
     }
