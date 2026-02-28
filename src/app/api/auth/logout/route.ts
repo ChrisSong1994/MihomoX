@@ -6,10 +6,12 @@ import { NextResponse } from 'next/server';
 export async function POST() {
   const response = NextResponse.json({ success: true });
   
-  // 清除 auth_token Cookie
+  // 清除 auth_token Cookie（必须使用与登录时相同的属性才能正确清除）
   response.cookies.set('auth_token', '', {
     httpOnly: true,
-    expires: new Date(0),
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 0,  // 立即过期
     path: '/',
   });
 

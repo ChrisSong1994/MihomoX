@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { securityMiddleware } from '@/lib/security';
+import { appLogger as logger } from '@/lib/logger';
 
 // 明确指定使用 Node.js Runtime（非 Edge）
 export const runtime = 'nodejs';
@@ -32,10 +33,18 @@ export default async function middleware(request: NextRequest) {
   const authToken = request.cookies.get('auth_token')?.value;
   
   let isAuthenticated = false;
+  let tokenValid = false;
   if (authToken) {
     const payload = await verifyToken(authToken);
+    tokenValid = !!payload;
     isAuthenticated = !!payload && !!payload.username;
   }
+
+  // 记录认证校验日志
+  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] || 
+                   request.headers.get('x-real-ip') || 
+                   'unknown';
+  logger.info(`[Auth] Path: ${pathname}, Token: ${authToken ? 'present' : 'none'}, Valid: ${tokenValid}, Authenticated: ${isAuthenticated}, IP: ${clientIp}`);
 
   // 4. 获取语言前缀
   const localeMatch = pathname.match(/^\/(zh|en)(\/|$)/);
@@ -45,11 +54,13 @@ export default async function middleware(request: NextRequest) {
   // 5. 处理登录页面访问
   if (purePathname === '/login') {
     if (isAuthenticated) {
+      logger.info(`[Auth] Already authenticated, redirecting from /login to /${locale || 'zh'}`);
       return NextResponse.redirect(new URL(`/${locale || 'zh'}`, request.url));
     }
   } else {
     // 6. 保护其他页面
     if (!isAuthenticated) {
+      logger.info(`[Auth] Not authenticated, redirecting to /${locale || 'zh'}/login`);
       const loginUrl = new URL(`/${locale || 'zh'}/login`, request.url);
       return NextResponse.redirect(loginUrl);
     }
@@ -75,7 +86,7 @@ export default async function middleware(request: NextRequest) {
 export const config = {
   // 匹配所有页面路由，排除 API、静态文件等
   matcher: [
-    '/',
+    // 匹配根路径、语言前缀路径、以及所有子路径
     '/:locale(zh|en)',
     '/:locale(zh|en)/:path*',
     '/login',

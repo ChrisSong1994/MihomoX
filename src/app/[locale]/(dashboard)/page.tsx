@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [status, setStatus] = useState<any>(null);
   const [ipInfo, setIpInfo] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B/s';
@@ -55,6 +56,8 @@ export default function Dashboard() {
         });
       } catch (e) {
         console.error('[Dashboard] Fetch error:', e);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -138,8 +141,13 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="p-6 h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
+            {isLoading || history.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+                {isLoading ? 'Loading...' : 'No data'}
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorUp" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
@@ -206,7 +214,8 @@ export default function Dashboard() {
                   isAnimationActive={false}
                 />
               </AreaChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 

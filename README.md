@@ -213,8 +213,8 @@ MihomoX/
 │   │   └── store.ts       # 数据存储
 │   └── server/
 │       └── types/          # 类型定义
+│   │── middleware.ts       # 中间件 
 ├── messages/               # 国际化消息
-├── middleware.ts           # 中间件
 ├── next.config.ts          # Next.js 配置
 └── package.json
 ```

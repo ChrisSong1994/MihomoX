@@ -26,10 +26,12 @@ export default function Sidebar() {
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      router.push(`/${currentLocale}/login`);
-      router.refresh();
+      // 使用 window.location.href 跳转，触发 Middleware 重新检查认证
+      window.location.href = `/${currentLocale}/login`;
     } catch (error) {
       console.error("[Auth] Logout failed", error);
+      // 即使 API 失败也跳转到登录页
+      window.location.href = `/${currentLocale}/login`;
     }
   };
 

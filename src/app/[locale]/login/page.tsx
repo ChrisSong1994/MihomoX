@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { Lock, User, Loader2 } from "lucide-react";
 
@@ -11,12 +11,27 @@ import { Lock, User, Loader2 } from "lucide-react";
 export default function LoginPage() {
   const t = useTranslations("Login");
   const router = useRouter();
+  const pathname = usePathname();
   const locale = useLocale();
   
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  /**
+   * 处理语言切换
+   */
+  const handleLanguageChange = async (newLocale: string) => {
+    // 1. 设置 next-intl 的 Cookie
+    const cookieOptions = 'path=/; max-age=31536000; SameSite=Lax';
+    document.cookie = `NEXT_LOCALE=${newLocale}; ${cookieOptions}`;
+    
+    // 2. 更新 URL 路径以确保语言切换正确
+    const currentPath = pathname.replace(/^\/(zh|en)/, '') || '/';
+    const newPath = `/${newLocale}${currentPath === '/' ? '' : currentPath}`;
+    router.push(newPath);
+  };
 
   /**
    * 处理登录提交
@@ -49,6 +64,18 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      {/* 语言切换按钮 */}
+      <div className="fixed top-4 right-4">
+        <select
+          value={locale}
+          onChange={(e) => handleLanguageChange(e.target.value)}
+          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+        >
+          <option value="zh">简体中文</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+
       <div className="max-w-md w-full p-8 bg-white rounded-2xl shadow-xl">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-slate-800">{t("title")}</h1>
