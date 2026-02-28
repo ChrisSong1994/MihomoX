@@ -49,8 +49,13 @@ export async function PATCH(req: Request) {
     // 重新生成配置文件
     generateFullConfig();
     
+    // 返回更新后的设置
+    const safeSettings = { ...settings };
+    delete (safeSettings as Record<string, unknown>).secret;
+    
     return NextResponse.json({
       success: true,
+      data: safeSettings,
       message: 'Settings updated successfully',
     });
   } catch (error) {

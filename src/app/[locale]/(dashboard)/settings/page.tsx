@@ -34,7 +34,8 @@ export default function SettingsPage() {
     try {
       const res = await fetch('/api/settings');
       const data = await res.json();
-      setAppSettings(data);
+      // API 返回格式: { success: true, data: {...} }
+      setAppSettings(data.data || data);
     } catch (e) {
       console.error(e);
     }
@@ -81,13 +82,19 @@ export default function SettingsPage() {
   const saveAppSettings = async (updates: any) => {
     try {
       const res = await fetch('/api/settings', {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
       const data = await res.json();
       if (data.success) {
-        setAppSettings(data.settings);
+        // 合并更新后的设置
+        const newSettings = { ...appSettings, ...updates };
+        // 如果 API 返回了更新后的数据，优先使用
+        if (data.data) {
+          Object.assign(newSettings, data.data);
+        }
+        setAppSettings(newSettings);
         showToast(t('updated'), 'success');
       }
     } catch (e: any) {
@@ -99,12 +106,12 @@ export default function SettingsPage() {
     // 1. 持久化到本地 settings.json
     await saveAppSettings({ locale: newLocale });
     
-    // 2. 设置 next-intl 的 Cookie
-    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
+    // 2. 设置 next-intl 的 Cookie (重要: 需要设置 domain 以确保跨路径有效)
+    const cookieOptions = 'path=/; max-age=31536000; SameSite=Lax';
+    document.cookie = `NEXT_LOCALE=${newLocale}; ${cookieOptions}`;
     
-    // 3. 显式跳转到新的语言路径
-    const newPath = window.location.pathname.replace(/^\/(zh|en)/, `/${newLocale}`);
-    window.location.href = newPath;
+    // 3. 强制刷新页面以应用新语言
+    window.location.reload();
   };
 
   const updateConfig = async (key: string, value: any) => {

@@ -1,5 +1,6 @@
 import winston from 'winston';
 import path from 'path';
+import fs from 'fs';
 import { getPaths, ensureDirectories } from './paths';
 
 // 确保 paths 在 logger 初始化前创建
@@ -53,36 +54,32 @@ const transports: winston.transport[] = [
   }),
 ];
 
-// 添加文件传输（支持轮转）
+// 添加文件传输
 if (logPath) {
-  // 检查是否支持 dailyRotateFile
-  try {
-    // 动态导入避免包不存在时报错
-    const dailyRotateFile = require('winston-daily-rotate-file');
-    
-    transports.push(new (dailyRotateFile as new (options: unknown) => winston.transport)({
-      filename: path.join(path.dirname(logPath), 'mihomox-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '10m',           // 单个文件最大 10MB
-      maxFiles: '14d',          // 保留 14 天的日志
-      zippedArchive: true,      // 压缩归档的日志
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json()
-      ),
-    }));
-  } catch {
-    // 如果 winston-daily-rotate-file 不可用，使用普通文件传输
-    transports.push(new winston.transports.File({
-      filename: logPath,
-      maxsize: 10 * 1024 * 1024, // 10MB
-      maxFiles: 5,
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json()
-      ),
-    }));
+  // 确保日志目录存在
+  const logDir = path.dirname(logPath);
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true });
   }
+
+  // 使用普通的文件传输（支持基本的轮转逻辑）
+  transports.push(new winston.transports.File({
+    filename: logPath,
+    maxsize: 10 * 1024 * 1024, // 10MB
+    maxFiles: 5,
+    format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.json()
+    ),
+  }));
+
+  // 同时输出人类可读的日志
+  transports.push(new winston.transports.File({
+    filename: path.join(logDir, 'mihomox-readable.log'),
+    maxsize: 5 * 1024 * 1024, // 5MB
+    maxFiles: 3,
+    format: customFormat,
+  }));
 }
 
 // 创建 logger

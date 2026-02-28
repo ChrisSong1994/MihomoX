@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Lock, User, Loader2 } from "lucide-react";
 
 /**
@@ -11,6 +11,7 @@ import { Lock, User, Loader2 } from "lucide-react";
 export default function LoginPage() {
   const t = useTranslations("Login");
   const router = useRouter();
+  const locale = useLocale();
   
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -33,8 +34,8 @@ export default function LoginPage() {
       });
 
       if (res.ok) {
-        // 登录成功，跳转到主页
-        router.push("/");
+        // 登录成功，跳转到主页（带语言前缀）
+        router.push(`/${locale}`);
         router.refresh();
       } else {
         setError(t("error"));

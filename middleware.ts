@@ -7,7 +7,7 @@ import { securityMiddleware } from '@/lib/security';
 const intlMiddleware = createMiddleware({
   locales: ['en', 'zh'],
   defaultLocale: 'zh',
-  localePrefix: 'as-needed'
+  localePrefix: 'always'
 });
 
 export default async function middleware(request: NextRequest) {
